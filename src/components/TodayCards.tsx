@@ -2,6 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { type Location } from '../data/types'
 import { DAILY_ITEMS } from '../data/exercises'
+import { CHEST_EVERY, measureDue, WAIST_EVERY } from '../lib/advice'
+import { useMetrics } from '../lib/body'
 import { weekdayIndex, ymd } from '../lib/dates'
 import { toggleDaily, useDaily } from '../lib/daily'
 import { db } from '../lib/db'
@@ -156,5 +158,32 @@ export function DailyCard({ now }: { now: Date }) {
         )
       })}
     </div>
+  )
+}
+
+// 首页：腰围 / 胸围到期提醒（点一下去身体页）
+export function MeasureReminder({ now }: { now: Date }) {
+  const waists = useMetrics('waist')
+  const chests = useMetrics('chest')
+  if (!waists || !chests) return null
+  const items = [
+    { name: '腰围', d: measureDue(waists, WAIST_EVERY, now) },
+    { name: '胸围', d: measureDue(chests, CHEST_EVERY, now) },
+  ].filter((x) => x.d.due)
+  if (!items.length) return null
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('body')}
+      className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl bg-amber-400/15 px-4 py-2.5 text-left active:bg-amber-400/25"
+    >
+      <span className="text-[15px] text-amber-100">
+        该量了：
+        {items
+          .map((x) => `${x.name}（${x.d.last ? `上次 ${x.d.last.date.slice(5).replace('-', '/')}` : '还没量过'}）`)
+          .join('、')}
+      </span>
+      <span className="text-xl text-amber-200">›</span>
+    </button>
   )
 }

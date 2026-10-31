@@ -32,10 +32,13 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - `src/components/SessionSummary.tsx` 总结视图（完成页、历史详情共用，点某组可改/删）· 页面 `HistoryPage`（#/history、#/history/:id，可删整次训练）
 - `src/lib/recommend.ts` 今天练什么（5.5 四条规则：地点、48h 排除、今天排法→拆全身→最久没练的肌群、单双周平手）· `src/components/TodayCards.tsx` 首页推荐卡（section aria-label=今天练什么）+ 每日打卡 · `src/lib/daily.ts` 打卡读写
 - 开始页路由 `#/start/:id/short` = 预选精简
+- `src/components/LineChart.tsx` 自己画的 SVG 折线图（点按十字线+提示框、≥2 条线有图例、疲劳点琥珀圈）；配色 SERIES_COLORS 用 dataviz 校验器在深色卡片底 #1e1e21 上校验通过，按顺序取
+- `src/components/ExerciseTrend.tsx` 历史→动作趋势（#/history/trend/:动作）：最大负重图、每组次数图（引体标题「引体每组次数」）、每次明细
+- `src/lib/advice.ts` 趋势提示规则 + 腰围（14 天）/胸围（28 天）到期；`strengthDecline` 力量下滑 · 身体页 `BodyPage`：趋势提示、体重图（每天点+7日均线，4周/12周/全部）、腰围胸围卡；首页 `MeasureReminder`
 - `src/lib/body.ts` 体重读写和 7 日平均 · `src/components/WeightCard.tsx` 首页/身体页的体重卡
 - 训练卡结构：`blocks[]`，每块 `slots[]` 轮流做；`finisher` 块组间 45s、精简模式跳过
 - Session 存当天训练卡副本 `layout`（含临时改动，精简已裁剪）；`cursor` 用 (块,轮,动作,左右) 定位，改了动作也能找回位置
-- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `library.mjs`（动作库/训练卡，23 项）+ `history.mjs`（总结/历史，22 项）+ `recommend.mjs`（推荐/打卡，21 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍
+- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `library.mjs`（动作库/训练卡，23 项）+ `history.mjs`（总结/历史，22 项）+ `recommend.mjs`（推荐/打卡，21 项）+ `trends.mjs`（趋势图/趋势提示各规则/腰围，24 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍
 
 ## 已确认的规则（和用户逐条确认过）
 - 疲劳模式按**肌群**判断（推/拉/腿；腹不受 48h 限制），只有疲劳肌群的数据不参与加重判断
@@ -70,4 +73,5 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 4. ✅ 永久编辑动作库和训练卡（设置→训练内容；动作：改全部字段/换图/隐藏；训练卡：改名/格子短名/地点/动作/顺序/收尾，新建、删除、排序；开始页「存到训练卡（以后都这样）」）
 5. ✅ 训练总结（用时/组数/总次数、该加难了、跟上次比、每组明细）+ 历史列表/详情（改组、删组、删整次）
 6. ✅ 今天推荐（家/外面、完整/精简、理由、不推荐的原因、拆全身提示、今天已练）+ 每日打卡（肌酸、吸腹，本周天数）
-7. 趋势图 + 身体数据
+7. ✅ 趋势图（历史→动作趋势）+ 身体数据（体重图、腰围胸围、趋势提示、首页到期提醒）
+—— MVP 七步全部完成。之后是需求文档的 V2：营养记录（热量/蛋白/盐，常用产品库）、动作详情页

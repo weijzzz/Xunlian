@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { DayPlanSheet } from '../components/DayPlanSheet'
-import { DailyCard, RecommendCard } from '../components/TodayCards'
+import { DailyCard, MeasureReminder, RecommendCard } from '../components/TodayCards'
 import { Button, Chip, SectionTitle } from '../components/ui'
 import { WeightCard } from '../components/WeightCard'
 import { GROUP_NAME, type Session } from '../data/types'
@@ -74,6 +74,10 @@ export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
 
       <div className="mt-3">
         <DailyCard now={now} />
+      </div>
+
+      <div className="mt-3">
+        <MeasureReminder now={now} />
       </div>
 
       {/* 开始训练 */}

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
+import { ExerciseTrend } from '../components/ExerciseTrend'
 import { SessionSummaryView } from '../components/SessionSummary'
 import { Button, Chip } from '../components/ui'
 import { GROUP_NAME, type Session } from '../data/types'
@@ -13,8 +14,31 @@ const hhmm = (t: number) => {
   return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-export function HistoryPage({ id }: { id?: string }) {
-  return id ? <HistoryDetail id={id} /> : <HistoryList />
+// #/history = 训练记录；#/history/trend[/动作] = 动作趋势；#/history/:id = 某次详情
+export function HistoryPage({ id, sub }: { id?: string; sub?: string }) {
+  if (id && id !== 'trend') return <HistoryDetail id={id} />
+  const trend = id === 'trend'
+  return (
+    <div>
+      <h1 className="mb-3 text-[27px] font-bold">历史</h1>
+      <div className="grid grid-cols-2 rounded-xl bg-zinc-800 p-1">
+        {[
+          ['history', '训练记录', !trend],
+          ['history/trend', '动作趋势', trend],
+        ].map(([to, label, on]) => (
+          <button
+            key={String(to)}
+            type="button"
+            onClick={() => navigate(String(to), { replace: true })}
+            className={`h-10 rounded-lg text-[15px] font-semibold ${on ? 'bg-zinc-600 text-white' : 'text-zinc-300'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {trend ? <ExerciseTrend exerciseId={sub} /> : <HistoryList />}
+    </div>
+  )
 }
 
 function HistoryList() {
@@ -37,8 +61,7 @@ function HistoryList() {
 
   return (
     <div>
-      <h1 className="mb-1 text-[27px] font-bold">历史</h1>
-      <p className="text-[15px] text-zinc-300">{sessions.length ? `一共 ${sessions.length} 次训练` : '还没有训练记录，练完一次这里就有了'}</p>
+      <p className="mt-3 text-[15px] text-zinc-300">{sessions.length ? `一共 ${sessions.length} 次训练` : '还没有训练记录，练完一次这里就有了'}</p>
       {groups.map((g) => (
         <div key={g.label}>
           <div className="mb-2 mt-6 px-1 text-[15px] font-bold text-zinc-200">{g.label}</div>

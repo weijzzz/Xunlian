@@ -69,7 +69,7 @@ export default function App() {
         {page === 'library' && <LibraryPage id={route[1]} />}
         {page === 'cards' && <CardsPage id={route[1]} />}
         {!fullscreen && tab === 'today' && <TodayPage weighOpen={weigh} />}
-        {!fullscreen && tab === 'history' && <HistoryPage id={route[1]} />}
+        {!fullscreen && tab === 'history' && <HistoryPage id={route[1]} sub={route[2]} />}
         {!fullscreen && tab === 'body' && <BodyPage />}
         {!fullscreen && tab === 'settings' && <SettingsPage />}
       </main>
