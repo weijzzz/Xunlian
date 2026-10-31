@@ -4,8 +4,8 @@ import { navigate } from '../lib/router'
 export type Tab = 'today' | 'history' | 'body' | 'settings'
 
 const ICON_PROPS = {
-  width: 24,
-  height: 24,
+  width: 26,
+  height: 26,
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
@@ -59,7 +59,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
 
 export function BottomNav({ current }: { current: Tab }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-zinc-700 bg-zinc-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <div className="mx-auto flex max-w-md">
         {TABS.map((t) => {
           const active = t.id === current
@@ -68,8 +68,8 @@ export function BottomNav({ current }: { current: Tab }) {
               key={t.id}
               type="button"
               onClick={() => navigate(t.id)}
-              className={`flex h-16 flex-1 flex-col items-center justify-center gap-1 text-xs font-medium ${
-                active ? 'text-lime-400' : 'text-zinc-500 active:text-zinc-300'
+              className={`flex h-17 flex-1 flex-col items-center justify-center gap-1 text-sm font-semibold ${
+                active ? 'text-lime-400' : 'text-zinc-300 active:text-white'
               }`}
             >
               {t.icon}

@@ -30,15 +30,15 @@ export function TodayPage() {
     <div>
       <header className="flex items-start justify-between">
         <div>
-          <div className="text-sm text-zinc-500">{longDate(now)}</div>
-          <h1 className="mt-0.5 text-2xl font-bold">
+          <div className="text-base text-zinc-300">{longDate(now)}</div>
+          <h1 className="mt-0.5 text-3xl font-bold">
             {todayTpl ? `今天默认：${getTemplate(todayTpl).name}` : '今天默认休息'}
           </h1>
         </div>
         <Chip tone={parity === 'odd' ? 'sky' : 'amber'}>{PARITY_NAME[parity]}</Chip>
       </header>
 
-      <div className={`mt-3 rounded-xl px-3 py-2 text-sm ${late ? 'bg-amber-400/10 text-amber-300' : 'bg-zinc-900 text-zinc-400'}`}>
+      <div className={`mt-4 rounded-xl px-4 py-3 text-base ${late ? 'bg-amber-400/20 text-amber-200' : 'bg-zinc-800 text-zinc-200'}`}>
         {late
           ? `明天 7:00 起床，${LATE_HOUR} 点后不建议训练`
           : tomorrowEarly
@@ -55,10 +55,10 @@ export function TodayPage() {
           return (
             <div
               key={wd}
-              className={`flex flex-col items-center gap-1 rounded-xl py-2 ${isToday ? 'bg-zinc-800 ring-1 ring-lime-400/60' : 'bg-zinc-900'}`}
+              className={`flex flex-col items-center gap-1 rounded-xl py-2.5 ${isToday ? 'bg-zinc-700 ring-2 ring-lime-400' : 'bg-zinc-800'}`}
             >
-              <span className={`text-[11px] ${isToday ? 'text-lime-300' : 'text-zinc-500'}`}>{wd.slice(1)}</span>
-              <span className={`text-sm font-bold ${tplId ? 'text-zinc-100' : 'text-zinc-700'}`}>
+              <span className={`text-sm ${isToday ? 'font-bold text-lime-300' : 'text-zinc-300'}`}>{wd.slice(1)}</span>
+              <span className={`text-lg font-bold ${tplId ? 'text-white' : 'text-zinc-500'}`}>
                 {tplId ? getTemplate(tplId).short : '·'}
               </span>
             </div>
@@ -68,7 +68,7 @@ export function TodayPage() {
 
       {/* 临时：核对训练卡数据 */}
       <SectionTitle hint="临时 · 核对用">训练卡</SectionTitle>
-      <p className="mb-3 px-1 text-xs leading-relaxed text-zinc-500">
+      <p className="mb-3 px-1 text-sm leading-relaxed text-zinc-300">
         下一步做训练模式后，这里会换成「今天练什么」。先帮我看看动作、组数、次数、休息有没有录错。
       </p>
       <div className="space-y-3">
@@ -90,16 +90,16 @@ function SlotLine({ slot }: { slot: Slot }) {
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <span className="font-semibold text-zinc-100">{ex.name}</span>
-        <span className="text-sm tabular-nums text-lime-300">
+        <span className="text-lg font-bold text-white">{ex.name}</span>
+        <span className="text-base font-semibold tabular-nums text-lime-300">
           {slot.sets}×{repText(ex)}
           {ex.sided === 'LR' ? '/边' : ''}
         </span>
-        <span className="text-xs text-zinc-500">{ex.loadLabel}</span>
+        <span className="text-sm text-zinc-400">{ex.loadLabel}</span>
       </div>
-      <div className="mt-0.5 text-xs leading-relaxed text-zinc-500">{ex.cue}</div>
+      <div className="mt-0.5 text-[15px] leading-relaxed text-zinc-300">{ex.cue}</div>
       {alt && (
-        <div className="mt-1 text-xs text-sky-300">
+        <div className="mt-1 text-sm font-medium text-sky-300">
           有矮杠换：{alt.name} {slot.sets}×{repText(alt)}
         </div>
       )}
@@ -111,8 +111,8 @@ function TemplateCard({ t }: { t: Template }) {
   const groups = templateGroups(t)
   return (
     <Card>
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-lg font-bold">{t.name}</h3>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-xl font-bold">{t.name}</h3>
         <div className="flex gap-1.5">
           <Chip tone={t.location === 'home' ? 'zinc' : 'sky'}>{t.location === 'home' ? '家' : '外面'}</Chip>
           {groups.map((g) => (
@@ -125,12 +125,12 @@ function TemplateCard({ t }: { t: Template }) {
           const same = p.restAB[0] === p.restBA[0] && p.restAB[1] === p.restBA[1]
           return (
             <div key={i} className="flex gap-3">
-              <div className="w-6 shrink-0 pt-0.5 text-center text-lg font-bold text-zinc-500">{'①②'[i]}</div>
+              <div className="w-7 shrink-0 pt-0.5 text-center text-xl font-bold text-zinc-300">{'①②'[i]}</div>
               <div className="min-w-0 flex-1 space-y-2">
                 <SlotLine slot={p.a} />
-                <div className="text-xs text-zinc-600">⇄</div>
+                <div className="text-base text-zinc-400">⇄</div>
                 <SlotLine slot={p.b} />
-                <div className="rounded-lg bg-zinc-950/60 px-2 py-1 text-xs text-zinc-400">
+                <div className="rounded-lg bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200">
                   {same
                     ? `两个动作之间休息 ${restText(p.restAB)}（默认 ${restDefault(p.restAB)}s）`
                     : `腿→核心 ${restText(p.restAB)} · 核心→腿 ${restText(p.restBA)}`}
@@ -141,15 +141,15 @@ function TemplateCard({ t }: { t: Template }) {
         })}
         {t.finisher && (
           <div className="flex gap-3">
-            <div className="w-6 shrink-0 pt-0.5 text-center text-lg font-bold text-zinc-500">③</div>
+            <div className="w-7 shrink-0 pt-0.5 text-center text-xl font-bold text-zinc-300">③</div>
             <div className="min-w-0 flex-1 space-y-2">
               <SlotLine slot={t.finisher} />
-              <div className="rounded-lg bg-zinc-950/60 px-2 py-1 text-xs text-zinc-400">组间 {t.finisher.rest}s</div>
+              <div className="rounded-lg bg-zinc-900 px-2.5 py-1.5 text-sm text-zinc-200">组间 {t.finisher.rest}s</div>
             </div>
           </div>
         )}
       </div>
-      <div className="mt-3 text-xs text-zinc-600">
+      <div className="mt-4 text-sm text-zinc-400">
         单边：左 → {restText(REST.sideSwitch)} → 右 · 换下一对 {REST.nextPair}s
       </div>
     </Card>
