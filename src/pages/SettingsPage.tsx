@@ -12,6 +12,8 @@ import {
 } from '../lib/backup'
 import { addDays, mondayOf, shortDate } from '../lib/dates'
 import { BUILD_TIME, checkForUpdate } from '../lib/pwa'
+import { useLibrary } from '../lib/library'
+import { navigate } from '../lib/router'
 import { describePlan, resetDefaultPlan, useSchedule } from '../lib/schedule'
 import { setSetting, useSettings } from '../lib/settings'
 import { requestPersist, useStorageInfo } from '../lib/storage'
@@ -22,6 +24,7 @@ export function SettingsPage() {
   return (
     <div>
       <h1 className="mb-2 text-[27px] font-bold">设置</h1>
+      <EditSection />
       <WeekSection />
       <PlanSection />
       <CreatineSection />
@@ -51,6 +54,33 @@ function WeekSection() {
         <Row label="单双周不对？" sub="放假后学校单双周错开时点一下">
           <Button onClick={() => void setSetting('parityFlip', !parityFlip)}>翻转</Button>
         </Row>
+      </Card>
+    </>
+  )
+}
+
+function EditSection() {
+  const { exercises, templates } = useLibrary()
+  const items = [
+    { to: 'cards', label: '训练卡', sub: `${templates.length} 张 · 改动作、组数、顺序，新建或删除` },
+    { to: 'library', label: '动作库', sub: `${exercises.filter((e) => !e.archived).length} 个动作 · 改要点、次数范围、图片，新建或隐藏` },
+  ]
+  return (
+    <>
+      <SectionTitle>训练内容</SectionTitle>
+      <Card className="py-1">
+        {items.map((it, i) => (
+          <div key={it.to}>
+            {i > 0 && <Divider />}
+            <button type="button" onClick={() => navigate(it.to)} className="flex min-h-14 w-full items-center justify-between gap-3 py-2 text-left">
+              <div className="min-w-0">
+                <div className="text-[17px] text-zinc-50">{it.label}</div>
+                <div className="mt-0.5 text-[13px] text-zinc-400">{it.sub}</div>
+              </div>
+              <span className="text-2xl text-zinc-400">›</span>
+            </button>
+          </div>
+        ))}
       </Card>
     </>
   )

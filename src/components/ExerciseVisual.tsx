@@ -60,17 +60,15 @@ export function ExerciseVisual({ exerciseId, editable = false, className = '' }:
   }
   if (!content) return null
 
+  const box = `relative flex items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/70 ${className}`
+  // 不能编辑时用普通容器（放在列表按钮里时不能再套按钮）
+  if (!editable) return <div className={box}>{content}</div>
+
   return (
     <>
-      <button
-        type="button"
-        disabled={!editable}
-        onClick={() => setSheet(true)}
-        aria-label="动作演示"
-        className={`relative flex items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/70 ${className}`}
-      >
+      <button type="button" onClick={() => setSheet(true)} aria-label="动作演示" className={box}>
         {content}
-        {editable && (media || anim) && (
+        {(media || anim) && (
           <span className="absolute bottom-1.5 right-2 rounded-md bg-zinc-800/90 px-1.5 py-0.5 text-[13px] text-zinc-300">换图</span>
         )}
       </button>

@@ -93,3 +93,71 @@ export async function createExercise(fields: Omit<Exercise, 'id' | 'custom'>): P
   exMap.set(id, ex)
   return id
 }
+
+export async function updateExercise(id: string, patch: Partial<Exercise>) {
+  const cur = exMap.get(id) ?? (await db.exercises.get(id))
+  if (!cur) return
+  const next = { ...cur, ...patch, id }
+  await db.exercises.put(next)
+  exMap.set(id, next)
+}
+
+export async function setArchived(id: string, archived: boolean) {
+  await updateExercise(id, { archived })
+}
+
+// ---------- 训练卡 ----------
+
+export async function saveTemplate(t: Template) {
+  await db.templates.put(t)
+  templates = [...templates.filter((x) => x.id !== t.id), t].sort((a, b) => a.order - b.order)
+}
+
+export async function createTemplate(): Promise<string> {
+  const all = await db.templates.toArray()
+  const id = `tpl_${crypto.randomUUID().slice(0, 8)}`
+  const t: Template = {
+    id,
+    name: '新训练卡',
+    short: '新',
+    location: 'home',
+    order: Math.max(0, ...all.map((x) => x.order)) + 1,
+    blocks: [],
+  }
+  await saveTemplate(t)
+  return id
+}
+
+// 删除训练卡：顺便把排法里用到它的地方清掉（历史训练存了卡名，不受影响）
+export async function deleteTemplate(id: string) {
+  await db.transaction('rw', db.templates, db.planOverrides, db.kv, async () => {
+    await db.templates.delete(id)
+    const ov = await db.planOverrides.toArray()
+    for (const o of ov) if (o.templateId === id) await db.planOverrides.delete(o.date)
+    const kv = await db.kv.get('defaultPlan')
+    const plan = kv?.value as Record<string, Record<string, string>> | null | undefined
+    if (plan) {
+      for (const parity of Object.keys(plan)) {
+        for (const wd of Object.keys(plan[parity])) if (plan[parity][wd] === id) delete plan[parity][wd]
+      }
+      await db.kv.put({ key: 'defaultPlan', value: plan })
+    }
+  })
+  templates = templates.filter((t) => t.id !== id)
+}
+
+// 上移 / 下移一张卡
+export async function moveTemplate(id: string, delta: -1 | 1) {
+  const list = [...templates]
+  const i = list.findIndex((t) => t.id === id)
+  const j = i + delta
+  if (i < 0 || j < 0 || j >= list.length) return
+  ;[list[i], list[j]] = [list[j], list[i]]
+  await db.transaction('rw', db.templates, async () => {
+    for (let k = 0; k < list.length; k++) {
+      list[k] = { ...list[k], order: k + 1 }
+      await db.templates.put(list[k])
+    }
+  })
+  templates = list
+}

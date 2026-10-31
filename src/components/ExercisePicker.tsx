@@ -36,7 +36,7 @@ export function ExercisePicker({
         <NewExerciseForm
           defaultGroup={preferGroup}
           onCancel={() => setCreating(false)}
-          onCreated={(id) => {
+          onSaved={(id) => {
             onPick(id)
             onClose()
           }}
