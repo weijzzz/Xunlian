@@ -11,7 +11,7 @@ import { FATIGUE_HOURS, fatigueFor, lastTrained } from '../lib/progress'
 import { navigate } from '../lib/router'
 import { startSession, useActiveSession } from '../lib/session'
 
-export function StartPage({ templateId }: { templateId: string }) {
+export function StartPage({ templateId, initialShort = false }: { templateId: string; initialShort?: boolean }) {
   const { templates } = useLibrary()
   const tpl = templates.find((t) => t.id === templateId)
   if (!tpl) {
@@ -22,7 +22,7 @@ export function StartPage({ templateId }: { templateId: string }) {
       </div>
     )
   }
-  return <StartForm key={tpl.id} tpl={tpl} />
+  return <StartForm key={tpl.id} tpl={tpl} initialShort={initialShort} />
 }
 
 function BackButton() {
@@ -33,9 +33,9 @@ function BackButton() {
   )
 }
 
-function StartForm({ tpl }: { tpl: Template }) {
+function StartForm({ tpl, initialShort }: { tpl: Template; initialShort: boolean }) {
   const [draft, setDraft] = useState<Block[]>(() => cloneBlocks(tpl.blocks))
-  const [short, setShort] = useState(false)
+  const [short, setShort] = useState(initialShort)
   const [starting, setStarting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)

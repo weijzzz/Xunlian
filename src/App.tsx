@@ -62,7 +62,7 @@ export default function App() {
       )}
 
       <main className={`flex-1 px-4 pt-[max(env(safe-area-inset-top),1rem)] ${fullscreen ? 'pb-4' : 'pb-32'}`}>
-        {page === 'start' && <StartPage templateId={route[1] ?? ''} />}
+        {page === 'start' && <StartPage key={route.join('/')} templateId={route[1] ?? ''} initialShort={route[2] === 'short'} />}
         {page === 'train' && <TrainPage />}
         {page === 'done' && <DonePage sessionId={route[1] ?? ''} />}
         {page === 'dev' && <DevAnims />}

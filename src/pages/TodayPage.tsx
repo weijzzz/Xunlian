@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
 import { DayPlanSheet } from '../components/DayPlanSheet'
+import { DailyCard, RecommendCard } from '../components/TodayCards'
 import { Button, Chip, SectionTitle } from '../components/ui'
 import { WeightCard } from '../components/WeightCard'
 import { GROUP_NAME, type Session } from '../data/types'
@@ -59,6 +60,10 @@ export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
         <WeightCard forceOpen={weighOpen} onSaved={weighOpen ? () => navigate('today') : undefined} />
       </div>
 
+      <div className="mt-3">
+        <RecommendCard now={now} />
+      </div>
+
       <div className={`mt-3 rounded-xl px-4 py-2.5 text-[15px] ${late ? 'bg-amber-400/20 text-amber-200' : 'bg-zinc-800 text-zinc-200'}`}>
         {late
           ? `明天 7:00 起床，${LATE_HOUR} 点后不建议训练`
@@ -67,8 +72,12 @@ export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
             : '明天不用早起，今晚可以练'}
       </div>
 
+      <div className="mt-3">
+        <DailyCard now={now} />
+      </div>
+
       {/* 开始训练 */}
-      <SectionTitle hint="先手动选卡">开始训练</SectionTitle>
+      <SectionTitle hint="不按推荐，自己选">开始训练</SectionTitle>
       <div className="space-y-2">
         {templates.map((t) => {
           const isToday = t.id === todayTplId
