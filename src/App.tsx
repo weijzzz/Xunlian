@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { BottomNav, type Tab } from './components/BottomNav'
-import { Placeholder } from './components/ui'
 import { installAudioUnlock } from './lib/alert'
 import { usePWA } from './lib/pwa'
 import { useRoute } from './lib/router'
@@ -9,6 +8,7 @@ import { BodyPage } from './pages/BodyPage'
 import { CardsPage } from './pages/CardsPage'
 import { DevAnims } from './pages/DevAnims'
 import { DonePage } from './pages/DonePage'
+import { HistoryPage } from './pages/HistoryPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { StartPage } from './pages/StartPage'
@@ -69,9 +69,7 @@ export default function App() {
         {page === 'library' && <LibraryPage id={route[1]} />}
         {page === 'cards' && <CardsPage id={route[1]} />}
         {!fullscreen && tab === 'today' && <TodayPage weighOpen={weigh} />}
-        {!fullscreen && tab === 'history' && (
-          <Placeholder title="历史" step="第 3、5 步" items={['按日期列出每次训练，点开看每组', '每个动作的趋势图（最大负重、每组次数）', '引体每组次数单独一张图']} />
-        )}
+        {!fullscreen && tab === 'history' && <HistoryPage id={route[1]} />}
         {!fullscreen && tab === 'body' && <BodyPage />}
         {!fullscreen && tab === 'settings' && <SettingsPage />}
       </main>

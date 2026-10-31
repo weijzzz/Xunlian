@@ -28,10 +28,12 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - `src/components/BlocksEditor.tsx` 改训练卡里的动作：开始页（只这一次）和训练卡编辑（template 模式：上下移、收尾、新的一组）共用
 - 页面 `LibraryPage`（#/library、#/library/:id、#/library/new）· `CardsPage`（#/cards、#/cards/:id）；入口在设置「训练内容」
 - library.tsx 里的 `updateExercise / setArchived / saveTemplate / createTemplate / deleteTemplate（会清掉排法里的引用）/ moveTemplate`
+- `src/lib/summary.ts` 一次训练的总结：该加难了（双重渐进/进阶方法/引体背包，疲劳肌群不算）、跟上次比（findRef 带 before=这次开始时间；先比最大负重，再比同组号同负重的次数）
+- `src/components/SessionSummary.tsx` 总结视图（完成页、历史详情共用，点某组可改/删）· 页面 `HistoryPage`（#/history、#/history/:id，可删整次训练）
 - `src/lib/body.ts` 体重读写和 7 日平均 · `src/components/WeightCard.tsx` 首页/身体页的体重卡
 - 训练卡结构：`blocks[]`，每块 `slots[]` 轮流做；`finisher` 块组间 45s、精简模式跳过
 - Session 存当天训练卡副本 `layout`（含临时改动，精简已裁剪）；`cursor` 用 (块,轮,动作,左右) 定位，改了动作也能找回位置
-- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `library.mjs`（动作库/训练卡，23 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍
+- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `library.mjs`（动作库/训练卡，23 项）+ `history.mjs`（总结/历史，22 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍
 
 ## 已确认的规则（和用户逐条确认过）
 - 疲劳模式按**肌群**判断（推/拉/腿；腹不受 48h 限制），只有疲劳肌群的数据不参与加重判断
@@ -64,6 +66,6 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 2.5 ✅ 次数数字条跟着走、选动作时新建动作、动作动画 + 自定义图片/视频
 3. ✅ 改某天的训练（首页排法格子点一下，本周/下周：只改这一天 / 以后每个单双周这天都这样；设置里可恢复原始排法）
 4. ✅ 永久编辑动作库和训练卡（设置→训练内容；动作：改全部字段/换图/隐藏；训练卡：改名/格子短名/地点/动作/顺序/收尾，新建、删除、排序；开始页「存到训练卡（以后都这样）」）
-5. 训练总结（该加重的动作）+ 历史列表
+5. ✅ 训练总结（用时/组数/总次数、该加难了、跟上次比、每组明细）+ 历史列表/详情（改组、删组、删整次）
 6. 今天推荐 + 每日打卡
 7. 趋势图 + 身体数据

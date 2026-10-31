@@ -194,3 +194,15 @@ export async function appendExercise(s: Session, exerciseId: string, sets = 3) {
 export async function updateLog(id: string, load: number, reps: number) {
   await db.setLogs.update(id, { load, reps })
 }
+
+export async function deleteLog(id: string) {
+  await db.setLogs.delete(id)
+}
+
+// 删整次训练（连同它的所有组）
+export async function deleteSession(id: string) {
+  await db.transaction('rw', db.sessions, db.setLogs, async () => {
+    await db.setLogs.where('sessionId').equals(id).delete()
+    await db.sessions.delete(id)
+  })
+}

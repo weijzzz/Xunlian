@@ -34,12 +34,20 @@ export function fatigueFor(groups: Group[], last: Map<Group, number>, now: numbe
 const bySet = (a: SetLog, b: SetLog) => a.setNo - b.setNo || (a.side === 'R' ? 1 : 0) - (b.side === 'R' ? 1 : 0)
 
 // 最近一次「这个动作的肌群没处于疲劳模式」的训练里，这个动作的所有组
-export function findRef(ex: Exercise, logs: SetLog[], sessions: Map<string, Session>, currentId: string): SetLog[] | null {
+// before：只看这个时间之前开始的训练（看历史里某一次时，「上次」要在它之前）
+export function findRef(
+  ex: Exercise,
+  logs: SetLog[],
+  sessions: Map<string, Session>,
+  currentId: string,
+  before?: number,
+): SetLog[] | null {
   const bySession = new Map<string, SetLog[]>()
   for (const l of logs) {
     if (l.exerciseId !== ex.id || l.sessionId === currentId) continue
     const s = sessions.get(l.sessionId)
     if (!s || s.fatigued.includes(ex.group)) continue
+    if (before !== undefined && s.startedAt >= before) continue
     const arr = bySession.get(l.sessionId) ?? []
     arr.push(l)
     bySession.set(l.sessionId, arr)
