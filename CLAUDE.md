@@ -6,7 +6,7 @@
 - 一次只做一个功能，做完用户在手机上测，确认后再做下一个
 - 新功能写代码前，先给用户看数据结构改动 + 页面改动，确认后再写
 - 界面中文；单位 kg、cm；深色模式
-- 每次 push 到 main 会自动部署到 https://weijzzz.github.io/xunlian/
+- 每次 push 到 main 会自动部署到 https://weijzzz.github.io/Xunlian/
 
 ## 技术栈
 React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pwa（registerType: prompt，训练中不自动刷新）· hash 路由（`src/lib/router.ts`）

@@ -12,9 +12,9 @@ const buildTime = new Date().toLocaleString('zh-CN', {
   minute: '2-digit',
 })
 
-// GitHub Pages 地址是 https://weijzzz.github.io/xunlian/
+// GitHub Pages 地址是 https://weijzzz.github.io/Xunlian/
 export default defineConfig({
-  base: '/xunlian/',
+  base: '/Xunlian/',
   define: {
     __BUILD_TIME__: JSON.stringify(buildTime),
   },
