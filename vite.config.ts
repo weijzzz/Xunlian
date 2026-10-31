@@ -38,6 +38,16 @@ export default defineConfig({
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // 桌面长按图标出现的快捷方式
+        shortcuts: [
+          {
+            name: '记体重',
+            short_name: '记体重',
+            description: '直接打开记体重',
+            url: '/Xunlian/#/weigh',
+            icons: [{ src: 'shortcut-weight-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],

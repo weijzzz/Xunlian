@@ -20,7 +20,7 @@ import { PARITY_NAME, weekParity } from '../lib/week'
 export function SettingsPage() {
   return (
     <div>
-      <h1 className="mb-2 text-3xl font-bold">设置</h1>
+      <h1 className="mb-2 text-[27px] font-bold">设置</h1>
       <WeekSection />
       <CreatineSection />
       <AlertSection />
@@ -65,11 +65,11 @@ function CreatineSection() {
           type="date"
           value={creatineStart ?? ''}
           onChange={(e) => void setSetting('creatineStart', e.target.value || null)}
-          className="mb-1 h-13 w-full rounded-xl bg-zinc-600 px-4 text-lg text-white [color-scheme:dark]"
+          className="mb-1 h-12 w-full rounded-xl bg-zinc-600 px-4 text-[17px] text-white [color-scheme:dark]"
         />
         {creatineStart && (
           <div className="flex justify-end">
-            <Button variant="ghost" className="min-h-10 text-base" onClick={() => void setSetting('creatineStart', null)}>
+            <Button variant="ghost" className="min-h-10 text-[15px]" onClick={() => void setSetting('creatineStart', null)}>
               清除
             </Button>
           </div>
@@ -134,7 +134,7 @@ function AlertSection() {
         <Divider />
         <Row label="模拟休息结束" sub={done ? '响了、震了吗？没有就告诉我' : '倒数 5 秒，最后 3 秒滴答，结束响铃+震动'}>
           {left !== null ? (
-            <span className="w-16 text-center text-4xl font-bold tabular-nums text-lime-300">{left}</span>
+            <span className="w-16 text-center text-3xl font-bold tabular-nums text-lime-300">{left}</span>
           ) : (
             <Button variant="primary" onClick={start}>
               开始
@@ -198,7 +198,7 @@ function StorageSection() {
           <>
             <Divider />
             <Row label="已用空间">
-              <span className="text-lg tabular-nums text-zinc-200">{info.usageKB} KB</span>
+              <span className="text-base tabular-nums text-zinc-200">{info.usageKB} KB</span>
             </Row>
           </>
         )}
@@ -259,11 +259,11 @@ function BackupSection() {
 
         {pending && (
           <div className="rounded-xl bg-red-500/10 p-3">
-            <div className="text-base text-red-100">
+            <div className="text-[15px] text-red-100">
               备份里有：{pending.summary.sessions} 次训练、{pending.summary.setLogs} 组、{pending.summary.bodyMetrics} 条身体数据、
               {pending.summary.dailyChecks} 天打卡。
             </div>
-            <div className="mt-1 text-base font-semibold text-red-300">恢复会覆盖手机上现在的全部数据。</div>
+            <div className="mt-1 text-[15px] font-semibold text-red-300">恢复会覆盖手机上现在的全部数据。</div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button variant="ghost" onClick={() => setPending(null)}>
                 取消
@@ -282,7 +282,7 @@ function BackupSection() {
           </div>
         )}
 
-        {msg && <div className={`text-base ${msg.tone === 'ok' ? 'text-lime-300' : 'text-red-300'}`}>{msg.text}</div>}
+        {msg && <div className={`text-[15px] ${msg.tone === 'ok' ? 'text-lime-300' : 'text-red-300'}`}>{msg.text}</div>}
       </Card>
     </>
   )
@@ -306,7 +306,7 @@ function AboutSection() {
         <Row label="版本" sub={`构建于 ${BUILD_TIME}`}>
           <Button onClick={() => void check()}>检查更新</Button>
         </Row>
-        {status && <div className="pb-1 text-base text-zinc-200">{status}</div>}
+        {status && <div className="pb-1 text-[15px] text-zinc-200">{status}</div>}
       </Card>
     </>
   )

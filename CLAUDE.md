@@ -6,7 +6,7 @@
 - 一次只做一个功能，做完用户在手机上测，确认后再做下一个
 - 新功能写代码前，先给用户看数据结构改动 + 页面改动，确认后再写
 - 界面中文；单位 kg、cm；深色模式
-- **字要大、颜色要亮**（用户反馈过嫌暗嫌小）：最小字号 text-sm（14px），正文 text-lg；次要文字 zinc-300，提示 zinc-400，别用 zinc-500 以下当文字色；卡片 bg-zinc-800/70 + 边框
+- **字号、颜色**（用户试过：12px 灰字嫌小嫌暗，18px 又嫌大）：正文 17px，次要 15px，最小 13px；次要文字 zinc-300，提示 zinc-400，别用 zinc-500 以下当文字色；卡片 bg-zinc-800/70 + 边框
 - 每次 push 到 main 会自动部署到 https://weijzzz.github.io/Xunlian/
 
 ## 技术栈
@@ -16,6 +16,7 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - `src/data/exercises.ts` 动作库 · `src/data/templates.ts` 训练卡和休息规则 · `src/data/types.ts` 所有类型
 - `src/lib/week.ts` 单双周、早起日、默认排法 · `src/lib/db.ts` 数据库 · `src/lib/backup.ts` 导出导入
 - `src/lib/alert.ts` 提示音/震动 · `src/lib/wakeLock.ts` 屏幕常亮
+- `src/lib/body.ts` 体重读写和 7 日平均 · `src/components/WeightCard.tsx` 首页/身体页的体重卡
 - 动作和训练卡 MVP 写死在代码里；V2 要能编辑时再搬进数据库
 
 ## 已确认的规则（和用户逐条确认过）
@@ -29,6 +30,7 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - 自重动作（反向卷腹、死虫、反向划船）到顶不提示加重，显示 `progressTip`
 - 引体：没有次数上限，目标 = 上次每组 +1；任一组 >12 才提示背包
 - 派克记脚垫高度 cm，快捷 0 / 10 / 30 / 45
+- 体重：秤精度 0.1kg；首页体重卡预填上次值，−/+ 可长按，点数字可键盘输入（支持逗号）；桌面长按图标「记体重」→ `#/weigh`；7 日平均要 7 天里至少记 3 天
 - 单双周：2026-11-02 那周 = 单周，设置可翻转
 - 推荐规则 3 平手：单周优先分化卡，双周优先全身
 - 拆全身：在家拆成「上肢A + 下肢」（上肢B 要单杠，只有周日在外面）
@@ -37,7 +39,8 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
   「力量下滑」= 最近两次非疲劳训练里过半动作比上次差
 
 ## 开发顺序
-1. ✅ 骨架 + PWA + 部署 + 设置页（提醒/常亮/存储/备份测试）
+1. ✅ 骨架 + PWA + 部署 + 设置页（提醒/常亮/存储/备份测试）——用户手机实测全部通过
+1.5 ✅ 体重快捷记录（提前做，好让数据早点攒起来）
 2. 训练模式（先手动选卡）
 3. 训练总结 + 历史列表
 4. 今天推荐 + 每日打卡

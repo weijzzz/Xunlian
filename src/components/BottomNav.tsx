@@ -4,8 +4,8 @@ import { navigate } from '../lib/router'
 export type Tab = 'today' | 'history' | 'body' | 'settings'
 
 const ICON_PROPS = {
-  width: 26,
-  height: 26,
+  width: 24,
+  height: 24,
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
@@ -68,7 +68,7 @@ export function BottomNav({ current }: { current: Tab }) {
               key={t.id}
               type="button"
               onClick={() => navigate(t.id)}
-              className={`flex h-17 flex-1 flex-col items-center justify-center gap-1 text-sm font-semibold ${
+              className={`flex h-16 flex-1 flex-col items-center justify-center gap-1 text-[13px] font-semibold ${
                 active ? 'text-lime-400' : 'text-zinc-300 active:text-white'
               }`}
             >
