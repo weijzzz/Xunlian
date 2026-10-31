@@ -15,6 +15,8 @@ export function useRoute(): string[] {
   return hash.split('/').filter(Boolean)
 }
 
-export function navigate(path: string) {
-  window.location.hash = `#/${path}`
+// replace = 不留历史（比如开始训练后按返回键不该回到开始页）
+export function navigate(path: string, opts: { replace?: boolean } = {}) {
+  if (opts.replace) window.location.replace(`#/${path}`)
+  else window.location.hash = `#/${path}`
 }

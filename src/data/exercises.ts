@@ -1,7 +1,8 @@
 import type { Exercise } from './types'
 
-// 动作库：对应需求文档第 3 节
-export const EXERCISES: Exercise[] = [
+// 动作库初始数据：对应需求文档第 3 节。
+// 第一次打开时导入数据库，之后以数据库为准（用户可以改）。
+export const SEED_EXERCISES: Exercise[] = [
   {
     id: 'deficit_pushup',
     name: '负重深度俯卧撑',
@@ -204,19 +205,22 @@ export const EXERCISES: Exercise[] = [
   },
 ]
 
-const BY_ID = new Map(EXERCISES.map((e) => [e.id, e]))
-
-export function getExercise(id: string): Exercise {
-  const ex = BY_ID.get(id)
-  if (!ex) throw new Error(`未知动作：${id}`)
-  return ex
-}
-
 // 次数目标的显示文字：6-10 / 15 / 力竭
 export function repText(ex: Exercise): string {
   if (ex.repMin === null) return '力竭'
   if (ex.repMin === ex.repMax || ex.repMax === null) return `${ex.repMin}`
   return `${ex.repMin}-${ex.repMax}`
+}
+
+// 负重的显示：5kg / 30cm / 自重
+export function loadText(ex: Exercise, load: number): string {
+  if (ex.unit === 'kg') return `${fmtNum(load)}kg`
+  if (ex.unit === 'cm') return `脚垫${fmtNum(load)}cm`
+  return '自重'
+}
+
+export function fmtNum(v: number): string {
+  return Number.isInteger(v) ? String(v) : v.toFixed(1)
 }
 
 // 热身：只打勾，不记重量

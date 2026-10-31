@@ -6,17 +6,23 @@ import { usePWA } from './lib/pwa'
 import { useRoute } from './lib/router'
 import { requestPersist } from './lib/storage'
 import { BodyPage } from './pages/BodyPage'
+import { DonePage } from './pages/DonePage'
 import { SettingsPage } from './pages/SettingsPage'
+import { StartPage } from './pages/StartPage'
 import { TodayPage } from './pages/TodayPage'
+import { TrainPage } from './pages/TrainPage'
 
 const TABS: Tab[] = ['today', 'history', 'body', 'settings']
 
 export default function App() {
   const route = useRoute()
-  // #/weigh = 桌面长按图标的「记体重」快捷方式
-  const weigh = route[0] === 'weigh'
-  const tab: Tab = TABS.includes(route[0] as Tab) ? (route[0] as Tab) : 'today'
   const pwa = usePWA()
+  const page = route[0] ?? 'today'
+  // 全屏流程：开始页、训练中、完成页（不显示底部导航）
+  const fullscreen = page === 'start' || page === 'train' || page === 'done'
+  // #/weigh = 桌面长按图标的「记体重」快捷方式
+  const weigh = page === 'weigh'
+  const tab: Tab = TABS.includes(page as Tab) ? (page as Tab) : 'today'
 
   useEffect(() => {
     installAudioUnlock()
@@ -25,11 +31,11 @@ export default function App() {
 
   useEffect(() => {
     window.scrollTo(0, 0)
-  }, [tab])
+  }, [page])
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
-      {pwa.needRefresh && (
+      {pwa.needRefresh && page !== 'train' && (
         <div className="sticky top-0 z-30 flex items-center justify-between gap-3 bg-lime-400 px-4 pb-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-zinc-950">
           <span className="font-semibold">有新版本</span>
           <div className="flex gap-2">
@@ -42,7 +48,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {pwa.offlineReady && !pwa.needRefresh && (
+      {pwa.offlineReady && !pwa.needRefresh && !fullscreen && (
         <button
           type="button"
           onClick={pwa.dismiss}
@@ -52,16 +58,19 @@ export default function App() {
         </button>
       )}
 
-      <main className="flex-1 px-4 pb-32 pt-[max(env(safe-area-inset-top),1.25rem)]">
-        {tab === 'today' && <TodayPage weighOpen={weigh} />}
-        {tab === 'history' && (
+      <main className={`flex-1 px-4 pt-[max(env(safe-area-inset-top),1rem)] ${fullscreen ? 'pb-4' : 'pb-32'}`}>
+        {page === 'start' && <StartPage templateId={route[1] ?? ''} />}
+        {page === 'train' && <TrainPage />}
+        {page === 'done' && <DonePage sessionId={route[1] ?? ''} />}
+        {!fullscreen && tab === 'today' && <TodayPage weighOpen={weigh} />}
+        {!fullscreen && tab === 'history' && (
           <Placeholder title="历史" step="第 3、5 步" items={['按日期列出每次训练，点开看每组', '每个动作的趋势图（最大负重、每组次数）', '引体每组次数单独一张图']} />
         )}
-        {tab === 'body' && <BodyPage />}
-        {tab === 'settings' && <SettingsPage />}
+        {!fullscreen && tab === 'body' && <BodyPage />}
+        {!fullscreen && tab === 'settings' && <SettingsPage />}
       </main>
 
-      <BottomNav current={tab} />
+      {!fullscreen && <BottomNav current={tab} />}
     </div>
   )
 }

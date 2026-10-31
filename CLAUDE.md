@@ -13,11 +13,18 @@
 React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pwa（registerType: prompt，训练中不自动刷新）· hash 路由（`src/lib/router.ts`）
 
 ## 代码在哪
-- `src/data/exercises.ts` 动作库 · `src/data/templates.ts` 训练卡和休息规则 · `src/data/types.ts` 所有类型
+- `src/data/types.ts` 所有类型 · `src/data/exercises.ts` / `templates.ts` 动作库和训练卡的**初始数据**（SEED_*）+ 休息规则
+- `src/lib/library.tsx` 动作库/训练卡：存在数据库里，**只在表为空时**从 SEED 导入——之后改 SEED 不会影响已有用户，要改得写迁移
+- `src/lib/plan.ts` 把训练卡展开成步骤（块→轮→动作→左右）+ 休息时长 + 预计分钟
+- `src/lib/progress.ts` 48h 疲劳、「上次」参考、负重/次数预填、加重提示、首测
+- `src/lib/session.ts` 训练进行中的所有操作（开始/记组/休息/换动作/跳过/多一组/加动作/结束/6h 自动结束）
+- 页面：`TodayPage` 首页 · `StartPage` 开始页（临时改动作）· `TrainPage` 热身/记组/休息/菜单 · `DonePage` 完成
 - `src/lib/week.ts` 单双周、早起日、默认排法 · `src/lib/db.ts` 数据库 · `src/lib/backup.ts` 导出导入
 - `src/lib/alert.ts` 提示音/震动 · `src/lib/wakeLock.ts` 屏幕常亮
 - `src/lib/body.ts` 体重读写和 7 日平均 · `src/components/WeightCard.tsx` 首页/身体页的体重卡
-- 动作和训练卡 MVP 写死在代码里；V2 要能编辑时再搬进数据库
+- 训练卡结构：`blocks[]`，每块 `slots[]` 轮流做；`finisher` 块组间 45s、精简模式跳过
+- Session 存当天训练卡副本 `layout`（含临时改动，精简已裁剪）；`cursor` 用 (块,轮,动作,左右) 定位，改了动作也能找回位置
+- 测试：`/home/claude/checks/train.mjs` 是完整走查脚本（playwright，58 项），改训练逻辑后跑一遍
 
 ## 已确认的规则（和用户逐条确认过）
 - 疲劳模式按**肌群**判断（推/拉/腿；腹不受 48h 限制），只有疲劳肌群的数据不参与加重判断
@@ -30,6 +37,9 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - 自重动作（反向卷腹、死虫、反向划船）到顶不提示加重，显示 `progressTip`
 - 引体：没有次数上限，目标 = 上次每组 +1；任一组 >12 才提示背包
 - 派克记脚垫高度 cm，快捷 0 / 10 / 30 / 45
+- 预填：负重 = 本次上一组 → 上次最后一组（=工作重量，首测组不算）→ 首测重量 → 0；次数目标 = 上次**同负重**、组号最接近那组 +1（封顶上限）；换了负重从下限开始
+- 休息中打开菜单：改动针对「下一个」动作，倒计时继续
+- 改动作/排法都给「只这次 / 以后都这样」两个选项（用户确认）；新建动作字段：名字、部位、推/拉/腿/腹、单/双边、负重方式、次数范围、要点
 - 体重：秤精度 0.1kg；首页体重卡预填上次值，−/+ 可长按，点数字可键盘输入（支持逗号）；桌面长按图标「记体重」→ `#/weigh`；7 日平均要 7 天里至少记 3 天
 - 单双周：2026-11-02 那周 = 单周，设置可翻转
 - 推荐规则 3 平手：单周优先分化卡，双周优先全身
@@ -41,7 +51,9 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 ## 开发顺序
 1. ✅ 骨架 + PWA + 部署 + 设置页（提醒/常亮/存储/备份测试）——用户手机实测全部通过
 1.5 ✅ 体重快捷记录（提前做，好让数据早点攒起来）
-2. 训练模式（先手动选卡）
-3. 训练总结 + 历史列表
-4. 今天推荐 + 每日打卡
-5. 趋势图 + 身体数据
+2. ✅ 训练模式（手动选卡）+ 临时改动作（开始页 ✎ 换/删/改组数/加；训练中 ⋯ 换/跳过/多一组/加动作/改上一组/提前结束）
+3. 改某天的训练（本周排法格子点一下：只这周 / 以后都这样）
+4. 永久编辑动作库和训练卡（设置里；新建动作；删除=隐藏）
+5. 训练总结（该加重的动作）+ 历史列表
+6. 今天推荐 + 每日打卡
+7. 趋势图 + 身体数据

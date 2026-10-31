@@ -8,6 +8,8 @@ export const GROUP_NAME: Record<Group, string> = {
   core: '腹',
 }
 
+export const GROUP_ORDER: Group[] = ['push', 'pull', 'legs', 'core']
+
 // no = 双边；LR = 单边，左右分开记；alt = 交替（死虫，一边算 1 次，不分左右记）
 export type Sided = 'no' | 'LR' | 'alt'
 
@@ -39,6 +41,8 @@ export interface Exercise {
   cue: string // 训练时显示的一行要点
   progressTip?: string // 自重 / 高度类动作到顶时显示的进阶方法
   firstTest?: FirstTest
+  archived?: boolean // 删除 = 隐藏（练过的动作历史要保留）
+  custom?: boolean // 用户自己新建的
 }
 
 export interface Slot {
@@ -47,49 +51,58 @@ export interface Slot {
   altId?: string // 可一键替换的动作（上肢B②：有矮杠换反向划船）
 }
 
+// 一组轮流做的动作（通常是一对）；finisher = 收尾，组间 45 秒，精简模式跳过
+export interface Block {
+  slots: Slot[]
+  finisher?: boolean
+}
+
 export type RestRange = [number, number] // 秒
-
-export interface Pair {
-  a: Slot
-  b: Slot
-  restAB: RestRange // a 做完到 b
-  restBA: RestRange // b 做完到下一轮 a
-}
-
-export interface Finisher extends Slot {
-  rest: number
-}
 
 export interface Template {
   id: string
   name: string
-  short: string // 短名，用在徽章上
+  short: string // 短名，用在周排法格子里
   location: Location
-  pairs: Pair[]
-  finisher?: Finisher
+  order: number
+  blocks: Block[]
 }
 
-// ---------- 存进 IndexedDB 的 ----------
+// ---------- 训练 ----------
+
+export type Phase = 'warmup' | 'set' | 'rest' | 'done'
+
+// 当前在计划里的位置。用 (第几块, 第几轮, 第几个动作, 左右) 定位，
+// 训练中改了动作，计划重新展开后也能找回原位置
+export interface Cursor {
+  b: number
+  r: number
+  s: number
+  side?: 'L' | 'R'
+  phase: Phase
+  restEndsAt?: number
+  restTotal?: number
+}
 
 export interface Session {
   id: string
   templateId: string
+  templateName: string // 当时的卡名（之后改名不影响历史）
   location: Location
   startedAt: number
   endedAt?: number
   status: 'active' | 'done' | 'quit'
   short: boolean // 精简模式
   fatigued: Group[] // 空 = 正常
-  warmupDone: boolean
-  swaps?: Record<string, string> // 原动作 id → 替换后的 id
-  cursor?: { step: number; restEndsAt?: number } // 中途退出恢复用
+  layout: Block[] // 这次实际用的训练卡副本（含临时改动；精简模式已裁剪）
+  cursor: Cursor
 }
 
 export interface SetLog {
   id: string
   sessionId: string
   exerciseId: string
-  setNo: number // 这个动作在本次训练里的第几组（从 1 开始）
+  setNo: number // 这个动作在本次训练里的第几组（从 1 开始，左右各自计数）
   side?: 'L' | 'R'
   load: number
   reps: number
@@ -108,6 +121,12 @@ export interface DailyCheck {
   date: string
   creatine: boolean
   vacuum: boolean
+}
+
+// 「只这周」改某天的训练；templateId = null 表示休息
+export interface PlanOverride {
+  date: string
+  templateId: string | null
 }
 
 export interface KV {

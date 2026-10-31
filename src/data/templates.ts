@@ -1,109 +1,88 @@
-import { getExercise } from './exercises'
-import type { Group, Pair, RestRange, Slot, Template } from './types'
+import type { Block, Group, RestRange, Template } from './types'
 
 // 休息规则：需求文档 5.1
 export const REST = {
-  pair: [60, 90] as RestRange, // 同一对两个动作之间
+  pair: [60, 90] as RestRange, // 同一块里两个动作之间
   legsToCore: [30, 45] as RestRange,
   coreToLegs: [45, 60] as RestRange,
-  sideSwitch: [20, 30] as RestRange, // 单边：左 → 右
-  finisher: 45, // ③ 收尾组间
-  nextPair: 90, // 换下一对（文档没写，默认 90 秒）
+  sideSwitch: 25, // 单边：左 → 右（20-30 秒取中）
+  finisher: 45, // 收尾组间
+  nextBlock: 90, // 换下一对（文档没写，默认 90 秒）
 }
 
-export function restBetween(fromId: string, toId: string): RestRange {
-  const from = getExercise(fromId).group
-  const to = getExercise(toId).group
+export function restBetween(from: Group, to: Group): RestRange {
   if (from === 'legs' && to === 'core') return REST.legsToCore
   if (from === 'core' && to === 'legs') return REST.coreToLegs
   return REST.pair
 }
 
-// 倒计时默认取区间中间值
+// 倒计时默认取区间中间值（取整到 5 秒）
 export function restDefault(r: RestRange): number {
   return Math.round((r[0] + r[1]) / 2 / 5) * 5
 }
 
-function pair(a: Slot, b: Slot): Pair {
-  return {
-    a,
-    b,
-    restAB: restBetween(a.exerciseId, b.exerciseId),
-    restBA: restBetween(b.exerciseId, a.exerciseId),
-  }
+// 精简模式（需求 5.2）：① 做 3 轮 → ② 做 2 轮（之后的也 2 轮）→ 收尾跳过
+export const SHORT_ROUNDS = [3, 2]
+
+export function shortLayout(blocks: Block[]): Block[] {
+  return blocks
+    .filter((b) => !b.finisher)
+    .map((b, i) => {
+      const cap = SHORT_ROUNDS[i] ?? SHORT_ROUNDS[SHORT_ROUNDS.length - 1]
+      return { ...b, slots: b.slots.map((s) => ({ ...s, sets: Math.min(s.sets, cap) })) }
+    })
 }
 
-// 训练卡：需求文档第 4 节
-export const TEMPLATES: Template[] = [
+export function cloneBlocks(blocks: Block[]): Block[] {
+  return blocks.map((b) => ({ ...b, slots: b.slots.map((s) => ({ ...s })) }))
+}
+
+const pair = (a: string, aSets: number, b: string, bSets: number, altB?: string): Block => ({
+  slots: [
+    { exerciseId: a, sets: aSets },
+    { exerciseId: b, sets: bSets, ...(altB ? { altId: altB } : {}) },
+  ],
+})
+const finisher = (id: string, sets: number): Block => ({ slots: [{ exerciseId: id, sets }], finisher: true })
+
+// 训练卡初始数据：需求文档第 4 节。第一次打开时导入数据库。
+export const SEED_TEMPLATES: Template[] = [
   {
     id: 'upper_a',
     name: '上肢A',
     short: 'A',
     location: 'home',
-    pairs: [
-      pair({ exerciseId: 'deficit_pushup', sets: 4 }, { exerciseId: 'backpack_row', sets: 4 }),
-      pair({ exerciseId: 'pike_pushup', sets: 3 }, { exerciseId: 'pullover', sets: 3 }),
-    ],
-    finisher: { exerciseId: 'reverse_crunch', sets: 3, rest: REST.finisher },
+    order: 1,
+    blocks: [pair('deficit_pushup', 4, 'backpack_row', 4), pair('pike_pushup', 3, 'pullover', 3), finisher('reverse_crunch', 3)],
   },
   {
     id: 'upper_b',
     name: '上肢B',
     short: 'B',
     location: 'out',
-    pairs: [
-      pair({ exerciseId: 'decline_wide_pushup', sets: 4 }, { exerciseId: 'pullup', sets: 4 }),
-      pair(
-        { exerciseId: 'diamond_pushup', sets: 3 },
-        { exerciseId: 'backpack_row', sets: 3, altId: 'inverted_row' },
-      ),
+    order: 2,
+    blocks: [
+      pair('decline_wide_pushup', 4, 'pullup', 4),
+      pair('diamond_pushup', 3, 'backpack_row', 3, 'inverted_row'),
+      finisher('reverse_crunch', 3),
     ],
-    finisher: { exerciseId: 'reverse_crunch', sets: 3, rest: REST.finisher },
   },
   {
     id: 'lower',
     name: '下肢+核心',
     short: '腿',
     location: 'home',
-    pairs: [
-      pair({ exerciseId: 'bss', sets: 4 }, { exerciseId: 'dead_bug', sets: 3 }),
-      pair({ exerciseId: 'sl_rdl', sets: 3 }, { exerciseId: 'weighted_crunch', sets: 3 }),
-    ],
+    order: 3,
+    blocks: [pair('bss', 4, 'dead_bug', 3), pair('sl_rdl', 3, 'weighted_crunch', 3)],
   },
   {
     id: 'full',
     name: '全身',
     short: '全',
     location: 'home',
-    pairs: [
-      pair({ exerciseId: 'deficit_pushup', sets: 4 }, { exerciseId: 'backpack_row', sets: 4 }),
-      pair({ exerciseId: 'bss', sets: 3 }, { exerciseId: 'pullover', sets: 3 }),
-    ],
-    finisher: { exerciseId: 'reverse_crunch', sets: 3, rest: REST.finisher },
+    order: 4,
+    blocks: [pair('deficit_pushup', 4, 'backpack_row', 4), pair('bss', 3, 'pullover', 3), finisher('reverse_crunch', 3)],
   },
 ]
 
-const BY_ID = new Map(TEMPLATES.map((t) => [t.id, t]))
-
-export function getTemplate(id: string): Template {
-  const t = BY_ID.get(id)
-  if (!t) throw new Error(`未知训练卡：${id}`)
-  return t
-}
-
-// 一张卡练到的肌群（按动作自动算）
-export function templateGroups(t: Template): Group[] {
-  const ids: string[] = []
-  for (const p of t.pairs) ids.push(p.a.exerciseId, p.b.exerciseId)
-  if (t.finisher) ids.push(t.finisher.exerciseId)
-  const order: Group[] = ['push', 'pull', 'legs', 'core']
-  const set = new Set(ids.map((id) => getExercise(id).group))
-  return order.filter((g) => set.has(g))
-}
-
-// 精简模式（需求 5.2）：① 做 3 轮 → ② 做 2 轮 → ③ 跳过
-export const SHORT_MODE = {
-  warmupMin: 3,
-  pairRounds: [3, 2],
-  skipFinisher: true,
-}
+export const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨']

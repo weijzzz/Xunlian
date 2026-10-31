@@ -1,11 +1,14 @@
+import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
-import { Card, Chip, SectionTitle } from '../components/ui'
+import { Button, Chip, SectionTitle } from '../components/ui'
 import { WeightCard } from '../components/WeightCard'
-import { getExercise, repText } from '../data/exercises'
-import { getTemplate, REST, restDefault, TEMPLATES, templateGroups } from '../data/templates'
-import { GROUP_NAME, type RestRange, type Slot, type Template } from '../data/types'
+import { GROUP_NAME, type Session } from '../data/types'
 import { addDays, longDate, mondayOf, shortDate, weekdayIndex, WEEKDAY_NAME } from '../lib/dates'
+import { db } from '../lib/db'
+import { blocksGroups, getTemplate, useLibrary } from '../lib/library'
+import { buildPlan, estimateMinutes } from '../lib/plan'
 import { navigate } from '../lib/router'
+import { finishSession, useActiveSession } from '../lib/session'
 import { useSettings } from '../lib/settings'
 import { DEFAULT_PLAN, defaultTemplateId, isEarlyDay, LATE_HOUR, lateNightWarning, PARITY_NAME, weekParity } from '../lib/week'
 
@@ -20,9 +23,12 @@ function useNow(intervalMs = 60_000) {
 
 export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
   const { parityFlip } = useSettings()
+  const { templates } = useLibrary()
+  const active = useActiveSession()
   const now = useNow()
   const parity = weekParity(now, parityFlip)
-  const todayTpl = defaultTemplateId(now, parityFlip)
+  const todayTplId = defaultTemplateId(now, parityFlip)
+  const todayTpl = todayTplId ? getTemplate(todayTplId) : undefined
   const tomorrowEarly = isEarlyDay(addDays(now, 1), parityFlip)
   const late = lateNightWarning(now, parityFlip)
   const monday = mondayOf(now)
@@ -33,12 +39,12 @@ export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
       <header className="flex items-start justify-between">
         <div>
           <div className="text-[15px] text-zinc-300">{longDate(now)}</div>
-          <h1 className="mt-0.5 text-[27px] font-bold">
-            {todayTpl ? `今天默认：${getTemplate(todayTpl).name}` : '今天默认休息'}
-          </h1>
+          <h1 className="mt-0.5 text-[27px] font-bold">{todayTpl ? `今天默认：${todayTpl.name}` : '今天默认休息'}</h1>
         </div>
         <Chip tone={parity === 'odd' ? 'sky' : 'amber'}>{PARITY_NAME[parity]}</Chip>
       </header>
+
+      {active && <ResumeBanner session={active} />}
 
       <div className="mt-4">
         <WeightCard forceOpen={weighOpen} onSaved={weighOpen ? () => navigate('today') : undefined} />
@@ -50,6 +56,41 @@ export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
           : tomorrowEarly
             ? `明天要早起，今晚 ${LATE_HOUR} 点前练完`
             : '明天不用早起，今晚可以练'}
+      </div>
+
+      {/* 开始训练 */}
+      <SectionTitle hint="先手动选卡">开始训练</SectionTitle>
+      <div className="space-y-2">
+        {templates.map((t) => {
+          const isToday = t.id === todayTplId
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => navigate(`start/${t.id}`)}
+              className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left active:bg-zinc-700 ${
+                isToday ? 'border-lime-400/70 bg-zinc-800' : 'border-zinc-700/60 bg-zinc-800/70'
+              }`}
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold">{t.name}</span>
+                  {isToday && <Chip tone="lime">今天</Chip>}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <Chip tone={t.location === 'home' ? 'zinc' : 'sky'}>{t.location === 'home' ? '家' : '外面'}</Chip>
+                  {blocksGroups(t.blocks).map((g) => (
+                    <Chip key={g}>{GROUP_NAME[g]}</Chip>
+                  ))}
+                </div>
+              </div>
+              <div className="shrink-0 text-right">
+                <div className="text-[15px] text-zinc-200">约 {estimateMinutes(t.blocks, false)} 分</div>
+                <div className="text-2xl leading-none text-zinc-400">›</div>
+              </div>
+            </button>
+          )
+        })}
       </div>
 
       {/* 本周默认排法 */}
@@ -65,99 +106,45 @@ export function TodayPage({ weighOpen = false }: { weighOpen?: boolean }) {
             >
               <span className={`text-[13px] ${isToday ? 'font-bold text-lime-300' : 'text-zinc-300'}`}>{wd.slice(1)}</span>
               <span className={`text-base font-bold ${tplId ? 'text-white' : 'text-zinc-500'}`}>
-                {tplId ? getTemplate(tplId).short : '·'}
+                {tplId ? (getTemplate(tplId)?.short ?? '?') : '·'}
               </span>
             </div>
           )
         })}
       </div>
-
-      {/* 临时：核对训练卡数据 */}
-      <SectionTitle hint="临时 · 核对用">训练卡</SectionTitle>
-      <p className="mb-3 px-1 text-[13px] leading-relaxed text-zinc-300">
-        下一步做训练模式后，这里会换成「今天练什么」。先帮我看看动作、组数、次数、休息有没有录错。
-      </p>
-      <div className="space-y-3">
-        {TEMPLATES.map((t) => (
-          <TemplateCard key={t.id} t={t} />
-        ))}
-      </div>
     </div>
   )
 }
 
-function restText(r: RestRange) {
-  return `${r[0]}–${r[1]}s`
-}
-
-function SlotLine({ slot }: { slot: Slot }) {
-  const ex = getExercise(slot.exerciseId)
-  const alt = slot.altId ? getExercise(slot.altId) : null
+function ResumeBanner({ session }: { session: Session }) {
+  const done = useLiveQuery(() => db.setLogs.where('sessionId').equals(session.id).count(), [session.id]) ?? 0
+  const total = buildPlan(session.layout).length
+  const [confirm, setConfirm] = useState(false)
   return (
-    <div className="min-w-0">
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <span className="text-[17px] font-bold text-white">{ex.name}</span>
-        <span className="text-[15px] font-semibold tabular-nums text-lime-300">
-          {slot.sets}×{repText(ex)}
-          {ex.sided === 'LR' ? '/边' : ''}
-        </span>
-        <span className="text-[13px] text-zinc-400">{ex.loadLabel}</span>
+    <div className="mt-4 rounded-2xl border border-lime-400/60 bg-lime-400/10 p-4">
+      <div className="text-[13px] text-lime-200">还有一次训练没练完</div>
+      <div className="mt-0.5 text-lg font-bold">
+        {session.templateName} · 已做 {done}/{total} 组
       </div>
-      <div className="mt-0.5 text-sm leading-relaxed text-zinc-300">{ex.cue}</div>
-      {alt && (
-        <div className="mt-1 text-[13px] font-medium text-sky-300">
-          有矮杠换：{alt.name} {slot.sets}×{repText(alt)}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function TemplateCard({ t }: { t: Template }) {
-  const groups = templateGroups(t)
-  return (
-    <Card>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-bold">{t.name}</h3>
-        <div className="flex gap-1.5">
-          <Chip tone={t.location === 'home' ? 'zinc' : 'sky'}>{t.location === 'home' ? '家' : '外面'}</Chip>
-          {groups.map((g) => (
-            <Chip key={g}>{GROUP_NAME[g]}</Chip>
-          ))}
-        </div>
-      </div>
-      <div className="space-y-4">
-        {t.pairs.map((p, i) => {
-          const same = p.restAB[0] === p.restBA[0] && p.restAB[1] === p.restBA[1]
-          return (
-            <div key={i} className="flex gap-3">
-              <div className="w-7 shrink-0 pt-0.5 text-center text-lg font-bold text-zinc-300">{'①②'[i]}</div>
-              <div className="min-w-0 flex-1 space-y-2">
-                <SlotLine slot={p.a} />
-                <div className="text-sm text-zinc-400">⇄</div>
-                <SlotLine slot={p.b} />
-                <div className="rounded-lg bg-zinc-900 px-2.5 py-1.5 text-[13px] text-zinc-200">
-                  {same
-                    ? `两个动作之间休息 ${restText(p.restAB)}（默认 ${restDefault(p.restAB)}s）`
-                    : `腿→核心 ${restText(p.restAB)} · 核心→腿 ${restText(p.restBA)}`}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-        {t.finisher && (
-          <div className="flex gap-3">
-            <div className="w-7 shrink-0 pt-0.5 text-center text-lg font-bold text-zinc-300">③</div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <SlotLine slot={t.finisher} />
-              <div className="rounded-lg bg-zinc-900 px-2.5 py-1.5 text-[13px] text-zinc-200">组间 {t.finisher.rest}s</div>
-            </div>
-          </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {confirm ? (
+          <>
+            <Button variant="ghost" onClick={() => setConfirm(false)}>
+              不了
+            </Button>
+            <Button variant="danger" onClick={() => void finishSession(session.id)}>
+              确认结束
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={() => setConfirm(true)}>结束</Button>
+            <Button variant="primary" onClick={() => navigate('train')}>
+              继续
+            </Button>
+          </>
         )}
       </div>
-      <div className="mt-4 text-[13px] text-zinc-400">
-        单边：左 → {restText(REST.sideSwitch)} → 右 · 换下一对 {REST.nextPair}s
-      </div>
-    </Card>
+    </div>
   )
 }

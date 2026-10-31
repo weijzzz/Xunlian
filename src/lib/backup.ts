@@ -1,10 +1,13 @@
-import { db, TABLE_NAMES } from './db'
+import { db, TABLE_NAMES, type TableName } from './db'
 import { ymd } from './dates'
 
 const APP_ID = 'xunlian'
-const FORMAT_VERSION = 1
+const FORMAT_VERSION = 2
 
-type Tables = Record<(typeof TABLE_NAMES)[number], unknown[]>
+// v1 备份只有前 5 张表；v2 起多了动作库、训练卡、排法改动
+const REQUIRED: TableName[] = ['sessions', 'setLogs', 'bodyMetrics', 'dailyChecks', 'kv']
+
+type Tables = Partial<Record<TableName, unknown[]>>
 
 interface Backup {
   app: string
@@ -77,28 +80,34 @@ export function parseBackup(text: string): Backup {
     throw new Error('这不是本 App 导出的备份')
   }
   if ((b.version ?? 0) > FORMAT_VERSION) throw new Error('备份来自更新的版本，请先更新 App')
-  for (const name of TABLE_NAMES) {
+  for (const name of REQUIRED) {
     if (!Array.isArray(b.tables[name])) throw new Error(`备份缺少 ${name} 表`)
+  }
+  for (const name of TABLE_NAMES) {
+    const t = b.tables[name]
+    if (t !== undefined && !Array.isArray(t)) throw new Error(`备份里 ${name} 表格式不对`)
   }
   return b as Backup
 }
 
 export function summarize(b: Backup): ImportSummary {
   return {
-    sessions: b.tables.sessions.length,
-    setLogs: b.tables.setLogs.length,
-    bodyMetrics: b.tables.bodyMetrics.length,
-    dailyChecks: b.tables.dailyChecks.length,
+    sessions: b.tables.sessions?.length ?? 0,
+    setLogs: b.tables.setLogs?.length ?? 0,
+    bodyMetrics: b.tables.bodyMetrics?.length ?? 0,
+    dailyChecks: b.tables.dailyChecks?.length ?? 0,
   }
 }
 
-// 用备份整体替换现有数据
+// 用备份整体替换现有数据。旧版备份里没有的表（动作库、训练卡）保持手机上现在的
 export async function restoreBackup(b: Backup) {
   await db.transaction('rw', TABLE_NAMES.map((n) => db.table(n)), async () => {
     for (const name of TABLE_NAMES) {
+      const rows = b.tables[name]
+      if (rows === undefined) continue
       const t = db.table(name)
       await t.clear()
-      await t.bulkAdd(b.tables[name])
+      await t.bulkAdd(rows)
     }
   })
 }
