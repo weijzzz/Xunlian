@@ -23,3 +23,13 @@ button {
   -webkit-user-select: none;
   touch-action: manipulation;
 }
+
+/* 次数数字条：选中的那个弹一下 */
+@keyframes chip-pop {
+  0% { transform: scale(0.82); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.chip-pop {
+  animation: chip-pop 0.22s ease-out;
+}

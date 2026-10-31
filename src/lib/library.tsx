@@ -84,3 +84,12 @@ export function blocksGroups(blocks: Block[]): Group[] {
   const set = new Set(blockExerciseIds(blocks).map((id) => getExercise(id).group))
   return GROUP_ORDER.filter((g) => set.has(g))
 }
+
+// 新建动作：存进动作库（永久），同时马上放进内存，避免刚建好时显示成「已删除」
+export async function createExercise(fields: Omit<Exercise, 'id' | 'custom'>): Promise<string> {
+  const id = `custom_${crypto.randomUUID().slice(0, 8)}`
+  const ex: Exercise = { ...fields, id, custom: true }
+  await db.exercises.add(ex)
+  exMap.set(id, ex)
+  return id
+}

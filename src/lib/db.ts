@@ -1,6 +1,14 @@
 import { Dexie, type Table } from 'dexie'
 import type { BodyMetric, DailyCheck, Exercise, KV, PlanOverride, Session, SetLog, Template } from '../data/types'
 
+// 用户给动作配的图片/动图/视频（不进 JSON 备份，太大）
+export interface Media {
+  exerciseId: string
+  blob: Blob
+  type: string
+  updatedAt: number
+}
+
 export class TrainingDB extends Dexie {
   sessions!: Table<Session, string>
   setLogs!: Table<SetLog, string>
@@ -10,6 +18,7 @@ export class TrainingDB extends Dexie {
   exercises!: Table<Exercise, string>
   templates!: Table<Template, string>
   planOverrides!: Table<PlanOverride, string>
+  media!: Table<Media, string>
 
   constructor() {
     super('xunlian')
@@ -25,6 +34,10 @@ export class TrainingDB extends Dexie {
       exercises: 'id',
       templates: 'id',
       planOverrides: 'date',
+    })
+    // v3：动作的自定义图片/视频
+    this.version(3).stores({
+      media: 'exerciseId',
     })
   }
 }

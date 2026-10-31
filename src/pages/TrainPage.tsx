@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ExercisePicker } from '../components/ExercisePicker'
+import { ExerciseVisual } from '../components/ExerciseVisual'
 import { Sheet, SheetItem } from '../components/Sheet'
 import { Stepper } from '../components/Stepper'
 import { Button } from '../components/ui'
@@ -384,8 +385,13 @@ function SetView({ step, prefill, onDone }: { step: PlanStep; prefill: Prefill; 
         </div>
       ))}
 
+      {/* 动作演示：占中间的空白，屏幕矮就自动缩小 */}
+      <div className="mt-3 flex min-h-[96px] flex-1 flex-col">
+        <ExerciseVisual exerciseId={ex.id} editable className="max-h-[260px] min-h-0 w-full flex-1" />
+      </div>
+
       {/* 输入区：放在下半屏 */}
-      <div className="mt-auto space-y-4 pt-5">
+      <div className="space-y-4 pt-4">
         {ex.unit !== 'none' && (
           <div>
             <div className="mb-1.5 flex items-baseline justify-between px-1">
@@ -414,20 +420,7 @@ function SetView({ step, prefill, onDone }: { step: PlanStep; prefill: Prefill; 
             次数{ex.sided === 'alt' ? '（一边算 1 次）' : ''}
           </div>
           <Stepper label="次数" value={reps} onChange={setReps} step={1} min={0} max={100} unit="次" size="md" />
-          <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${prefill.chips.length}, minmax(0, 1fr))` }}>
-            {prefill.chips.map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => setReps(n)}
-                className={`h-13 rounded-xl text-xl font-bold tabular-nums ${
-                  reps === n ? 'bg-lime-400 text-zinc-950' : 'bg-zinc-700 text-zinc-100 active:bg-zinc-600'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
+          <RepChips base={prefill.chips} reps={reps} repMax={ex.repMax} onPick={setReps} />
         </div>
 
         <Button
@@ -444,6 +437,48 @@ function SetView({ step, prefill, onDone }: { step: PlanStep; prefill: Prefill; 
         </Button>
       </div>
     </div>
+  )
+}
+
+// 次数数字条：当前次数超出范围时整条平移，让它一直看得见
+function chipWindow(base: number[], reps: number): number[] {
+  const n = base.length
+  if (!n) return base
+  let start = base[0]
+  if (reps < start) start = Math.max(0, reps)
+  else if (reps > base[n - 1]) start = reps - n + 1
+  return Array.from({ length: n }, (_, i) => start + i)
+}
+
+function RepChips({ base, reps, repMax, onPick }: { base: number[]; reps: number; repMax: number | null; onPick: (n: number) => void }) {
+  const chips = chipWindow(base, reps)
+  const over = repMax !== null && reps > repMax
+  return (
+    <>
+      <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${chips.length}, minmax(0, 1fr))` }}>
+        {chips.map((n) => {
+          const on = reps === n
+          const above = repMax !== null && n > repMax
+          return (
+            <button
+              key={on ? `on-${n}` : n}
+              type="button"
+              onClick={() => onPick(n)}
+              className={`h-13 rounded-xl text-xl font-bold tabular-nums ${
+                on
+                  ? `chip-pop ${above ? 'bg-amber-400' : 'bg-lime-400'} text-zinc-950`
+                  : above
+                    ? 'bg-zinc-700 text-amber-300 active:bg-zinc-600'
+                    : 'bg-zinc-700 text-zinc-100 active:bg-zinc-600'
+              }`}
+            >
+              {n}
+            </button>
+          )
+        })}
+      </div>
+      {over && <div className="mt-1.5 px-1 text-[13px] text-amber-300">超过上限 {repMax} 次 · 每组都到上限，下次会提示加重</div>}
+    </>
   )
 }
 
@@ -512,6 +547,7 @@ function RestView({
 
       {nextEx && next && nextPrefill && (
         <div className="mt-6 rounded-2xl border border-zinc-700/60 bg-zinc-800/70 p-4">
+          <ExerciseVisual exerciseId={nextEx.id} className="mb-3 h-28 w-full" />
           <div className="text-[13px] text-zinc-400">下一个</div>
           <div className="mt-0.5 flex items-baseline gap-2">
             <span className="text-[22px] font-bold">{nextEx.name}</span>
