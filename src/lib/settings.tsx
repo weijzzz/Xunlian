@@ -2,15 +2,18 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { createContext, useContext, type ReactNode } from 'react'
 import type { KV } from '../data/types'
 import { db } from './db'
+import type { WeekPlan } from './week'
 
 export interface Settings {
   parityFlip: boolean // 单双周翻转
   creatineStart: string | null // 肌酸开始日期 YYYY-MM-DD
+  defaultPlan: WeekPlan | null // 改过的默认排法；null = 用原始排法
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   parityFlip: false,
   creatineStart: null,
+  defaultPlan: null,
 }
 
 function toSettings(rows: KV[]): Settings {

@@ -29,12 +29,14 @@ export function lateNightWarning(now: Date, flip: boolean): boolean {
   return now.getHours() >= LATE_HOUR && isEarlyDay(addDays(now, 1), flip)
 }
 
-// 默认排法：weekdayIndex → 训练卡 id
-export const DEFAULT_PLAN: Record<Parity, Partial<Record<number, string>>> = {
+// 默认排法：weekdayIndex（周一=0）→ 训练卡 id。用户可以在 App 里改（存设置 defaultPlan）
+export type WeekPlan = Record<Parity, Partial<Record<number, string>>>
+
+export const DEFAULT_PLAN: WeekPlan = {
   odd: { 0: 'upper_a', 4: 'lower', 6: 'upper_b' }, // 周一晚上肢A、周五晚下肢、周日上肢B
   even: { 4: 'full' }, // 周五晚全身
 }
 
-export function defaultTemplateId(d: Date, flip: boolean): string | undefined {
-  return DEFAULT_PLAN[weekParity(d, flip)][weekdayIndex(d)]
+export function planTemplateId(d: Date, flip: boolean, plan: WeekPlan = DEFAULT_PLAN): string | undefined {
+  return plan[weekParity(d, flip)][weekdayIndex(d)]
 }

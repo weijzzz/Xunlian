@@ -19,7 +19,8 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - `src/lib/progress.ts` 48h 疲劳、「上次」参考、负重/次数预填、加重提示、首测
 - `src/lib/session.ts` 训练进行中的所有操作（开始/记组/休息/换动作/跳过/多一组/加动作/结束/6h 自动结束）
 - 页面：`TodayPage` 首页 · `StartPage` 开始页（临时改动作）· `TrainPage` 热身/记组/休息/菜单 · `DonePage` 完成
-- `src/lib/week.ts` 单双周、早起日、默认排法 · `src/lib/db.ts` 数据库 · `src/lib/backup.ts` 导出导入
+- `src/lib/schedule.ts` 某天实际练什么 = planOverrides（只这一天）→ settings.defaultPlan（以后都这样）→ week.ts 的 DEFAULT_PLAN；`dayWarnings` 48h/早起/上肢B 提示 · `DayPlanSheet` 改某天的面板
+- `src/lib/week.ts` 单双周、早起日、原始排法 · `src/lib/db.ts` 数据库 · `src/lib/backup.ts` 导出导入
 - `src/lib/alert.ts` 提示音/震动 · `src/lib/wakeLock.ts` 屏幕常亮
 - `src/anim/` 动作小人动画：`figure.ts` 引擎（姿势=髋+躯干角+手脚落点，肘膝用 IK）、`anims.ts` 13 个动作、`ExerciseAnim.tsx`；`#/dev/anims` 看所有关键帧（调动画时截图用）
 - `src/components/ExerciseVisual.tsx` 动作演示：用户自己的图片/动图/视频（db.media，不进备份）优先，否则小人动画
@@ -27,7 +28,7 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - `src/lib/body.ts` 体重读写和 7 日平均 · `src/components/WeightCard.tsx` 首页/身体页的体重卡
 - 训练卡结构：`blocks[]`，每块 `slots[]` 轮流做；`finisher` 块组间 45s、精简模式跳过
 - Session 存当天训练卡副本 `layout`（含临时改动，精简已裁剪）；`cursor` 用 (块,轮,动作,左右) 定位，改了动作也能找回位置
-- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `upgrade.mjs`（旧版数据升级），改训练逻辑后都跑一遍
+- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍
 
 ## 已确认的规则（和用户逐条确认过）
 - 疲劳模式按**肌群**判断（推/拉/腿；腹不受 48h 限制），只有疲劳肌群的数据不参与加重判断
@@ -58,7 +59,7 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 1.5 ✅ 体重快捷记录（提前做，好让数据早点攒起来）
 2. ✅ 训练模式（手动选卡）+ 临时改动作（开始页 ✎ 换/删/改组数/加；训练中 ⋯ 换/跳过/多一组/加动作/改上一组/提前结束）
 2.5 ✅ 次数数字条跟着走、选动作时新建动作、动作动画 + 自定义图片/视频
-3. 改某天的训练（本周排法格子点一下：只这周 / 以后都这样）
+3. ✅ 改某天的训练（首页排法格子点一下，本周/下周：只改这一天 / 以后每个单双周这天都这样；设置里可恢复原始排法）
 4. 永久编辑动作库和训练卡（设置里；编辑/隐藏动作；新建已在选动作面板里有了）
 5. 训练总结（该加重的动作）+ 历史列表
 6. 今天推荐 + 每日打卡

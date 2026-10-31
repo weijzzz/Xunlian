@@ -12,6 +12,7 @@ import {
 } from '../lib/backup'
 import { addDays, mondayOf, shortDate } from '../lib/dates'
 import { BUILD_TIME, checkForUpdate } from '../lib/pwa'
+import { describePlan, resetDefaultPlan, useSchedule } from '../lib/schedule'
 import { setSetting, useSettings } from '../lib/settings'
 import { requestPersist, useStorageInfo } from '../lib/storage'
 import { useWakeLock, type WakeState } from '../lib/wakeLock'
@@ -22,6 +23,7 @@ export function SettingsPage() {
     <div>
       <h1 className="mb-2 text-[27px] font-bold">设置</h1>
       <WeekSection />
+      <PlanSection />
       <CreatineSection />
       <AlertSection />
       <WakeSection />
@@ -49,6 +51,42 @@ function WeekSection() {
         <Row label="单双周不对？" sub="放假后学校单双周错开时点一下">
           <Button onClick={() => void setSetting('parityFlip', !parityFlip)}>翻转</Button>
         </Row>
+      </Card>
+    </>
+  )
+}
+
+function PlanSection() {
+  const sched = useSchedule()
+  const [confirm, setConfirm] = useState(false)
+  return (
+    <>
+      <SectionTitle hint="在首页排法里点某一天可以改">默认排法</SectionTitle>
+      <Card>
+        <div className="space-y-1 py-1 text-[15px] text-zinc-200">
+          <div>{describePlan(sched.plan, 'odd')}</div>
+          <div>{describePlan(sched.plan, 'even')}</div>
+        </div>
+        {sched.customPlan && (
+          <>
+            <Divider />
+            <Row label="已经改过默认排法" sub="恢复成最初的：单周 周一上肢A·周五下肢·周日上肢B；双周 周五全身">
+              {confirm ? (
+                <Button
+                  variant="danger"
+                  onClick={() => {
+                    void resetDefaultPlan()
+                    setConfirm(false)
+                  }}
+                >
+                  确认
+                </Button>
+              ) : (
+                <Button onClick={() => setConfirm(true)}>恢复</Button>
+              )}
+            </Row>
+          </>
+        )}
       </Card>
     </>
   )
