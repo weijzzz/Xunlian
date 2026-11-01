@@ -39,7 +39,7 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - `src/pages/VacuumPage.tsx` 吸腹计时（#/vacuum，首页打卡「吸腹 ⏱」进入）：3 组 ×（准备 3s → 保持 20/30/40s → 休息 20s），做完自动打勾；也能不计时直接打勾
 - 提醒推送：`src/lib/push.ts`（设备 id+密钥、订阅、`buildItems` 排未来 21 天、`syncReminders` 内容变了才发）· `src/components/Reminders.tsx`（设置「提醒」区 + App 里的 `ReminderSync`：开 App/切回来/改设置/记体重时同步）· `public/push-sw.js`（SW 里收推送、点通知打开对应页，workbox importScripts 引入）
 - settings.reminders 是列表（id/label/enabled/early/other），以后加别的提醒往里加一项 + push.ts 的 TEXT 加文案
-- `worker/` 推送服务器（Cloudflare Worker + Durable Object 闹钟准点发 Web Push，VAPID 钥匙第一次 /key 时在 DO 里生成）；只存订阅和提醒时间。`.github/workflows/worker.yml` 改 worker/ 时自动部署（要仓库 Secrets：CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID）；地址填在 push.ts 的 `DEPLOYED_URL`，调试可用 localStorage `xunlian.pushUrl` 覆盖
+- `worker/` 推送服务器（Cloudflare Worker + Durable Object 闹钟准点发 Web Push，VAPID 钥匙第一次 /key 时在 DO 里生成）；只存订阅和提醒时间。`.github/workflows/worker.yml` 改 worker/ 时自动部署（要仓库 Secrets：CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID）；地址 https://xunlian-push.zhangweijie2006.workers.dev 填在 push.ts 的 `DEPLOYED_URL`（这个沙盒连不上 workers.dev，只能看 Actions 日志里的检查），调试可用 localStorage `xunlian.pushUrl` 覆盖
 - 为什么要服务器：浏览器的定时通知（Notification Triggers）从没正式上线，PWA 关着时只能靠服务器推
 - 训练卡结构：`blocks[]`，每块 `slots[]` 轮流做；`finisher` 块组间 45s、精简模式跳过
 - Session 存当天训练卡副本 `layout`（含临时改动，精简已裁剪）；`cursor` 用 (块,轮,动作,左右) 定位，改了动作也能找回位置

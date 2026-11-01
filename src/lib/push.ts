@@ -5,7 +5,7 @@ import { setSetting } from './settings'
 import { isEarlyDay } from './week'
 
 // 推送服务器地址（Cloudflare Worker）。部署后填上；调试时可以用 localStorage 的 xunlian.pushUrl 覆盖
-const DEPLOYED_URL = ''
+const DEPLOYED_URL = 'https://xunlian-push.zhangweijie2006.workers.dev'
 export function pushUrl(): string {
   try {
     return localStorage.getItem('xunlian.pushUrl') || DEPLOYED_URL

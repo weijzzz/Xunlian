@@ -51,3 +51,7 @@ jobs:
             sleep 10
           done
           curl -fsS "${{ steps.deploy.outputs.url }}/key" | head -c 120; echo
+          # App 那边（github.io）能不能跨域调用
+          curl -fsS -o /dev/null -D - -X OPTIONS "${{ steps.deploy.outputs.url }}/register" \
+            -H "Origin: https://weijzzz.github.io" -H "Access-Control-Request-Method: POST" \
+            | grep -i "access-control-allow-origin: https://weijzzz.github.io"
