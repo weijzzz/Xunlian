@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { ReminderSection } from '../components/Reminders'
 import { Button, Card, Chip, Divider, Row, SectionTitle } from '../components/ui'
 import { beepRestOver, canSound, canVibrate, restOverAlert, tick, unlockAudio, vibrateRestOver } from '../lib/alert'
 import {
@@ -24,6 +25,7 @@ export function SettingsPage() {
   return (
     <div>
       <h1 className="mb-2 text-[27px] font-bold">设置</h1>
+      <ReminderSection />
       <EditSection />
       <WeekSection />
       <PlanSection />

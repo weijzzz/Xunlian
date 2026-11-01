@@ -33,4 +33,7 @@ const scale = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><re
 <path d="M190 236 A66 66 0 0 1 322 236" fill="none" stroke="${FG}" stroke-width="24" stroke-linecap="round"/>
 <line x1="256" y1="252" x2="290" y2="204" stroke="${FG}" stroke-width="22" stroke-linecap="round"/></svg>`
 await sharp(Buffer.from(scale)).resize(192, 192).png().toFile('public/shortcut-weight-192.png')
+// 通知栏小图标：Android 只认透明背景上的白色形状
+const badge = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">${bars(1).replaceAll(FG, '#ffffff')}</svg>`
+await sharp(Buffer.from(badge)).resize(96, 96).png().toFile('public/badge-96.png')
 console.log('icons done')

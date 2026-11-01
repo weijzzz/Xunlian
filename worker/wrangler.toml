@@ -1,0 +1,15 @@
+# 训练记录 App 的提醒推送服务
+name = "xunlian-push"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+[[durable_objects.bindings]]
+name = "HUB"
+class_name = "PushHub"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PushHub"]
+
+[vars]
+ALLOWED_ORIGINS = "https://weijzzz.github.io,http://localhost:4173,http://localhost:5173"

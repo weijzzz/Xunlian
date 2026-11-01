@@ -136,7 +136,7 @@ export function DailyCard({ now }: { now: Date }) {
           <button
             key={it.id}
             type="button"
-            onClick={() => void toggleDaily(d.today.date, it.id)}
+            onClick={() => (it.id === 'vacuum' ? navigate('vacuum') : void toggleDaily(d.today.date, it.id))}
             className={`flex min-h-16 items-center gap-3 rounded-2xl border px-3 text-left ${
               on ? 'border-lime-400/60 bg-lime-400/10' : 'border-zinc-700/60 bg-zinc-800/70 active:bg-zinc-700'
             }`}
@@ -149,7 +149,7 @@ export function DailyCard({ now }: { now: Date }) {
               {on ? '✓' : ''}
             </span>
             <span className="min-w-0">
-              <span className="block text-[15px] font-semibold leading-tight">{it.name}</span>
+              <span className="block text-[15px] font-semibold leading-tight">{it.id === 'vacuum' ? '吸腹 ⏱' : it.name}</span>
               <span className="block text-[13px] text-zinc-400">
                 本周 {d.week[it.id]}/{d.daysSoFar} 天
               </span>

@@ -26,3 +26,10 @@ export async function toggleDaily(date: string, field: DailyField) {
   })
 }
 
+
+export async function setDaily(date: string, field: DailyField, value: boolean) {
+  await db.transaction('rw', db.dailyChecks, async () => {
+    const cur = (await db.dailyChecks.get(date)) ?? { date, creatine: false, vacuum: false }
+    await db.dailyChecks.put({ ...cur, [field]: value })
+  })
+}

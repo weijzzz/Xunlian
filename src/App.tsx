@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BottomNav, type Tab } from './components/BottomNav'
+import { ReminderSync } from './components/Reminders'
 import { installAudioUnlock } from './lib/alert'
 import { usePWA } from './lib/pwa'
 import { useRoute } from './lib/router'
@@ -14,6 +15,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import { StartPage } from './pages/StartPage'
 import { TodayPage } from './pages/TodayPage'
 import { TrainPage } from './pages/TrainPage'
+import { VacuumPage } from './pages/VacuumPage'
 
 const TABS: Tab[] = ['today', 'history', 'body', 'settings']
 
@@ -22,7 +24,7 @@ export default function App() {
   const pwa = usePWA()
   const page = route[0] ?? 'today'
   // 全屏流程：开始页、训练中、完成页（不显示底部导航）
-  const fullscreen = ['start', 'train', 'done', 'dev', 'library', 'cards'].includes(page)
+  const fullscreen = ['start', 'train', 'done', 'dev', 'library', 'cards', 'vacuum'].includes(page)
   // #/weigh = 桌面长按图标的「记体重」快捷方式
   const weigh = page === 'weigh'
   const tab: Tab = TABS.includes(page as Tab) ? (page as Tab) : 'today'
@@ -68,6 +70,7 @@ export default function App() {
         {page === 'dev' && <DevAnims />}
         {page === 'library' && <LibraryPage id={route[1]} />}
         {page === 'cards' && <CardsPage id={route[1]} />}
+        {page === 'vacuum' && <VacuumPage />}
         {!fullscreen && tab === 'today' && <TodayPage weighOpen={weigh} />}
         {!fullscreen && tab === 'history' && <HistoryPage id={route[1]} sub={route[2]} />}
         {!fullscreen && tab === 'body' && <BodyPage />}
@@ -75,6 +78,7 @@ export default function App() {
       </main>
 
       {!fullscreen && <BottomNav current={tab} />}
+      <ReminderSync />
     </div>
   )
 }

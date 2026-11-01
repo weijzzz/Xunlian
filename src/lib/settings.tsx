@@ -4,16 +4,31 @@ import type { KV } from '../data/types'
 import { db } from './db'
 import type { WeekPlan } from './week'
 
+// 定时提醒（以后可以往里加别的）
+export interface Reminder {
+  id: string // 'weight'
+  label: string
+  enabled: boolean
+  early: string // 早起日几点提醒 HH:MM
+  other: string // 不早起的日子几点
+}
+
 export interface Settings {
   parityFlip: boolean // 单双周翻转
   creatineStart: string | null // 肌酸开始日期 YYYY-MM-DD
   defaultPlan: WeekPlan | null // 改过的默认排法；null = 用原始排法
+  vacuumHold: number // 吸腹每组保持几秒
+  pushOn: boolean // 开了通知
+  reminders: Reminder[]
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   parityFlip: false,
   creatineStart: null,
   defaultPlan: null,
+  vacuumHold: 30,
+  pushOn: false,
+  reminders: [{ id: 'weight', label: '记体重', enabled: true, early: '08:00', other: '08:00' }],
 }
 
 function toSettings(rows: KV[]): Settings {
