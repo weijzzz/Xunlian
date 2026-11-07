@@ -191,6 +191,17 @@ export async function appendExercise(s: Session, exerciseId: string, sets = 3) {
   })
 }
 
+// 「变难了」标记：这次改了节奏或变式（下放 4 秒、腿伸直…），次数少了不算退步
+export async function toggleHarder(sessionId: string, exerciseId: string) {
+  await db.transaction('rw', db.sessions, async () => {
+    const s = await db.sessions.get(sessionId)
+    if (!s) return
+    const cur = s.harder ?? []
+    const next = cur.includes(exerciseId) ? cur.filter((id) => id !== exerciseId) : [...cur, exerciseId]
+    await db.sessions.update(sessionId, { harder: next })
+  })
+}
+
 export async function updateLog(id: string, load: number, reps: number) {
   await db.setLogs.update(id, { load, reps })
 }

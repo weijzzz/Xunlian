@@ -1,16 +1,17 @@
 import { fmtNum } from '../data/exercises'
 import type { Exercise, Session, SetLog } from '../data/types'
 import { getExercise } from './library'
-import { earnedProgression, findRef, readyForLoad } from './progress'
+import { earnedProgression, findRef, readyForLoad, totalCompare } from './progress'
 
 // 一次训练的总结：每个动作的成绩、该加重的、跟上次比
 
-export type Trend = 'better' | 'same' | 'worse' | 'first' | 'fatigued'
+export type Trend = 'better' | 'same' | 'worse' | 'first' | 'fatigued' | 'harder' // harder = 变难了、次数少了，不算退步
 
 export interface ExerciseSummary {
   ex: Exercise
   logs: SetLog[]
   fatigued: boolean
+  harder: boolean // 这次打了「变难了」
   totalReps: number
   maxLoad: number
   advice: string | null // 下次怎么加难
@@ -48,6 +49,15 @@ function compare(ex: Exercise, logs: SetLog[], ref: SetLog[] | null, maxLoad: nu
       return d > 0 ? { trend: 'better', text: `+${fmtNum(d)}${unitOf(ex)}` } : { trend: 'worse', text: `−${fmtNum(-d)}${unitOf(ex)}` }
     }
   }
+  // 力竭动作（引体）：比总次数；组数不一样只比前几组
+  if (ex.repMin === null) {
+    const c = totalCompare(logs, ref)
+    const all = logs.reduce((s, l) => s + l.reps, 0)
+    const sameSets = c.sets === c.refSets && logs.every((l) => l.setNo <= c.sets)
+    const text = sameSets ? `共 ${all} 次 · 上次 ${c.refAll}` : `前 ${c.sets} 组 ${c.mine} · 上次 ${c.ref}`
+    const d = c.mine - c.ref
+    return { trend: d > 0 ? 'better' : d < 0 ? 'worse' : 'same', text }
+  }
   // 负重一样：比同一组（同组号、同边、同负重）的次数；对不上就比每组平均
   const refMap = new Map(ref.map((l) => [key(l), l]))
   const pairs = logs.map((l) => [l, refMap.get(key(l))] as const).filter(([l, r]) => r && r.load === l.load)
@@ -77,11 +87,14 @@ export function summarize(session: Session, logs: SetLog[], history: SetLog[], s
     const maxLoad = Math.max(...ls.map((l) => l.load))
     const totalReps = ls.reduce((s, l) => s + l.reps, 0)
     const ref = findRef(ex, history, sessions, session.id, session.startedAt)
-    const cmp = fatigued ? { trend: 'fatigued' as const, text: '疲劳模式，不算退步' } : compare(ex, ls, ref, maxLoad)
+    const harder = (session.harder ?? []).includes(id)
+    let cmp: { trend: Trend; text: string } = fatigued ? { trend: 'fatigued', text: '疲劳模式，不算退步' } : compare(ex, ls, ref, maxLoad)
+    if (harder && cmp.trend === 'worse') cmp = { trend: 'harder', text: '变难了' }
     return {
       ex,
       logs: ls,
       fatigued,
+      harder,
       totalReps,
       maxLoad,
       advice: fatigued ? null : advice(ex, ls, maxLoad),

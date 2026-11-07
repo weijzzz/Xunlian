@@ -5,7 +5,7 @@ import { ExerciseVisual } from '../components/ExerciseVisual'
 import { Sheet, SheetItem } from '../components/Sheet'
 import { Stepper } from '../components/Stepper'
 import { Button } from '../components/ui'
-import { loadText, WARMUPS } from '../data/exercises'
+import { loadText, setText, WARMUPS } from '../data/exercises'
 import { CIRCLED } from '../data/templates'
 import type { Exercise, Session, SetLog } from '../data/types'
 import { restOverAlert, tick, unlockAudio } from '../lib/alert'
@@ -24,9 +24,11 @@ import {
   logSet,
   replaceExercise,
   skipExercise,
+  toggleHarder,
   updateLog,
   useActiveSession,
 } from '../lib/session'
+import { setSetting, useSettings } from '../lib/settings'
 import { useWakeLock } from '../lib/wakeLock'
 
 export function TrainPage() {
@@ -55,6 +57,7 @@ function Trainer({ session }: { session: Session }) {
   const history = useLiveQuery(() => db.setLogs.where('exerciseId').anyOf(exIds).toArray(), [exIds.join(',')])
   const sessions = useLiveQuery(() => db.sessions.toArray(), [])
 
+  const settings = useSettings()
   const [menu, setMenu] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [editLast, setEditLast] = useState(false)
@@ -66,12 +69,14 @@ function Trainer({ session }: { session: Session }) {
   const prefillFor = (st: PlanStep): Prefill => {
     const ex = getExercise(st.exerciseId)
     const ref = findRef(ex, history, sessMap, session.id)
+    const plannedSets = plan.filter((p) => p.exerciseId === ex.id && (p.side ?? null) === (st.side ?? null)).length
     return computePrefill(
       ex,
       st.side,
       logs.filter((l) => l.exerciseId === ex.id),
       ref,
       session.fatigued.includes(ex.group),
+      plannedSets,
     )
   }
 
@@ -116,6 +121,7 @@ function Trainer({ session }: { session: Session }) {
             {session.short ? ' · 精简' : ''} · {blockLabel}
           </div>
         </div>
+        <Elapsed since={session.startedAt} />
         {c.phase !== 'warmup' && (
           <span className="text-[15px] tabular-nums text-zinc-300">
             {Math.max(position, 1)}/{plan.length}
@@ -224,6 +230,22 @@ function Trainer({ session }: { session: Session }) {
               >
                 多做一组
               </SheetItem>
+              {targetEx && (
+                <SheetItem
+                  tone={(session.harder ?? []).includes(targetEx.id) ? 'accent' : undefined}
+                  onClick={() => {
+                    setMenu(false)
+                    void toggleHarder(session.id, targetEx.id)
+                  }}
+                  sub={
+                    (session.harder ?? []).includes(targetEx.id)
+                      ? '已标记，次数少了不算退步 · 点一下取消'
+                      : '改了节奏或变式（下放 4 秒、腿伸直…），次数少了不算退步'
+                  }
+                >
+                  {(session.harder ?? []).includes(targetEx.id) ? '✓ 这次变难了' : '这次变难了'}
+                </SheetItem>
+              )}
             </>
           )}
           <SheetItem
@@ -234,6 +256,16 @@ function Trainer({ session }: { session: Session }) {
             sub="加在最后，做 3 组"
           >
             加一个动作
+          </SheetItem>
+          <SheetItem
+            onClick={() => {
+              const on = !(settings.sound || settings.ticks)
+              void setSetting('sound', on)
+              void setSetting('ticks', on)
+            }}
+            sub={settings.sound || settings.ticks ? '提示音和滴答都关掉，震动照常' : '现在没声音，点一下打开提示音和滴答'}
+          >
+            {settings.sound || settings.ticks ? '关掉声音' : '打开声音'}
           </SheetItem>
           {confirmEnd ? (
             <div className="grid grid-cols-2 gap-2 pt-2">
@@ -269,9 +301,27 @@ function Trainer({ session }: { session: Session }) {
   )
 }
 
+// 顶栏：开始训练到现在多久了（含热身）
+function Elapsed({ since }: { since: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const s = Math.max(0, Math.floor((now - since) / 1000))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const text = h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` : `${m}:${String(s % 60).padStart(2, '0')}`
+  return (
+    <span aria-label={`已练 ${text}`} className="shrink-0 rounded-lg bg-zinc-800 px-2 py-0.5 text-[15px] font-semibold tabular-nums text-zinc-200">
+      ⏱ {text}
+    </span>
+  )
+}
+
 function logText(ex: Exercise, l: SetLog): string {
   const side = l.side ? `${SIDE_NAME[l.side]} ` : ''
-  return ex.unit === 'none' ? `${side}${l.reps} 次` : `${side}${loadText(ex, l.load)} × ${l.reps}`
+  return `${side}${setText(ex, l.load, l.reps)}`
 }
 
 // ---------- 热身 ----------
@@ -377,8 +427,9 @@ function SetView({ step, prefill, onDone }: { step: PlanStep; prefill: Prefill; 
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 text-[17px]">
         {prefill.refText && <span className="text-zinc-300">{prefill.refText}</span>}
         {prefill.refText && <span className="text-zinc-500">→</span>}
-        <span className="font-bold text-lime-300">目标 {prefill.target ?? '力竭'}</span>
+        <span className="font-bold text-lime-300">{prefill.goalText}</span>
       </div>
+      {prefill.progressText && <div className="mt-1 text-[17px] font-semibold text-zinc-100">{prefill.progressText}</div>}
       {prefill.banners.map((bn) => (
         <div key={bn.text} className={`mt-2 rounded-xl px-3 py-2 text-[15px] ${BANNER_STYLE[bn.tone]}`}>
           {bn.text}
@@ -554,7 +605,7 @@ function RestView({
             {next.side && <span className="text-[17px] font-semibold text-sky-200">{SIDE_NAME[next.side]}</span>}
           </div>
           <div className="mt-1 text-[17px] text-zinc-200">
-            目标 <span className="font-bold text-lime-300">{nextPrefill.target ?? '力竭'}</span>
+            <span className="font-bold text-lime-300">{nextPrefill.restGoal}</span>
             {nextEx.unit !== 'none' && <> · {loadText(nextEx, nextPrefill.load)}</>}
           </div>
           {nextPrefill.banners.map((bn) => (

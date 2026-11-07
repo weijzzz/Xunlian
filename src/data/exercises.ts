@@ -2,6 +2,9 @@ import type { Exercise } from './types'
 
 // 动作库初始数据：对应需求文档第 3 节。
 // 第一次打开时导入数据库，之后以数据库为准（用户可以改）。
+// 划船类（反向划船、门框划船）到顶后怎么加难
+export const ROW_TIP = '脚往前挪让身体更平 / 改单臂 / 下放改3秒'
+
 export const SEED_EXERCISES: Exercise[] = [
   {
     id: 'deficit_pushup',
@@ -128,7 +131,7 @@ export const SEED_EXERCISES: Exercise[] = [
     repMin: 8,
     repMax: 12,
     cue: '身体一条直线，胸口拉向杠',
-    progressTip: '脚往前移，让身体更平',
+    progressTip: ROW_TIP,
   },
   {
     id: 'bss',
@@ -212,11 +215,17 @@ export function repText(ex: Exercise): string {
   return `${ex.repMin}-${ex.repMax}`
 }
 
-// 负重的显示：5kg / 30cm / 自重
+// 负重的显示：5kg / 脚垫30cm；负重动作没背东西（0kg）= 自重，脚垫 0 = 地面
 export function loadText(ex: Exercise, load: number): string {
-  if (ex.unit === 'kg') return `${fmtNum(load)}kg`
-  if (ex.unit === 'cm') return `脚垫${fmtNum(load)}cm`
+  if (ex.unit === 'kg') return load === 0 ? '自重' : `${fmtNum(load)}kg`
+  if (ex.unit === 'cm') return load === 0 ? '地面' : `脚垫${fmtNum(load)}cm`
   return '自重'
+}
+
+// 一组的短写法：自重×9 / 地面×10 / 5kg×8 / 30cm×10
+export function setText(ex: Exercise, load: number, reps: number): string {
+  const l = ex.unit === 'cm' && load !== 0 ? `${fmtNum(load)}cm` : loadText(ex, load)
+  return `${l}×${reps}`
 }
 
 export function fmtNum(v: number): string {

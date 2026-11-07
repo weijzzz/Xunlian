@@ -93,3 +93,19 @@ export function Placeholder({ title, step, items }: { title: string; step: strin
     </div>
   )
 }
+
+// 开关（role=switch），label 给读屏和测试用
+export function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={() => onChange(!on)}
+      className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${on ? 'bg-lime-400' : 'bg-zinc-600'}`}
+    >
+      <span className={`absolute top-1 h-6 w-6 rounded-full bg-white transition-all ${on ? 'left-7' : 'left-1'}`} />
+    </button>
+  )
+}

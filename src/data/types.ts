@@ -96,6 +96,7 @@ export interface Session {
   fatigued: Group[] // 空 = 正常
   layout: Block[] // 这次实际用的训练卡副本（含临时改动；精简模式已裁剪）
   cursor: Cursor
+  harder?: string[] // 这次改了节奏/变式、变难了的动作 id（不算退步）
 }
 
 export interface SetLog {

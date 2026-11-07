@@ -3,7 +3,7 @@ import { useMetrics } from '../lib/body'
 import { addDays, longDate, ymd } from '../lib/dates'
 import { buildItems, disablePush, enablePush, permission, pushSupported, pushUrl, sendTest, syncReminders } from '../lib/push'
 import { setSetting, useSettings, type Reminder } from '../lib/settings'
-import { Button, Card, Chip, Divider, Row, SectionTitle } from './ui'
+import { Button, Card, Chip, Divider, Row, SectionTitle, Switch } from './ui'
 
 function useWeighedToday(): boolean | undefined {
   const weights = useMetrics('weight')
@@ -105,16 +105,7 @@ export function ReminderSection() {
           <div key={r.id}>
             <Divider />
             <Row label={r.label} sub={r.id === 'weight' ? '当天记过体重就不再提醒' : undefined}>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={r.enabled}
-                aria-label={`${r.label}提醒`}
-                onClick={() => update(r.id, { enabled: !r.enabled })}
-                className={`relative h-8 w-14 rounded-full transition-colors ${r.enabled ? 'bg-lime-400' : 'bg-zinc-600'}`}
-              >
-                <span className={`absolute top-1 h-6 w-6 rounded-full bg-white transition-all ${r.enabled ? 'left-7' : 'left-1'}`} />
-              </button>
+              <Switch on={r.enabled} onChange={(v) => update(r.id, { enabled: v })} label={`${r.label}提醒`} />
             </Row>
             {r.enabled && (
               <div className="space-y-2 pb-2">

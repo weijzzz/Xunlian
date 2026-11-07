@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { fmtNum } from '../data/exercises'
+import { setText } from '../data/exercises'
 import type { Exercise, Session, SetLog } from '../data/types'
 import { longDate } from '../lib/dates'
 import { db } from '../lib/db'
@@ -19,7 +19,7 @@ const unitOf = (ex: Exercise) => (ex.unit === 'cm' ? 'cm' : ex.unit === 'kg' ? '
 
 function pill(ex: Exercise, l: SetLog) {
   const side = l.side === 'L' ? '左' : l.side === 'R' ? '右' : ''
-  return ex.unit === 'none' ? `${side}${l.reps}` : `${side}${fmtNum(l.load)}${unitOf(ex)}×${l.reps}`
+  return `${side}${setText(ex, l.load, l.reps)}`
 }
 
 // 历史 → 动作趋势
@@ -129,7 +129,11 @@ export function ExerciseTrend({ exerciseId }: { exerciseId?: string }) {
               <span>
                 {longDate(new Date(r.session.startedAt))} · {r.session.templateName}
               </span>
-              {r.fatigued && <span className="text-amber-300">疲劳</span>}
+              <span className="flex gap-2">
+                {(r.session.harder ?? []).includes(ex.id) && <span className="text-sky-300">变难了</span>}
+                {r.fatigued && <span className="text-amber-300">疲劳</span>}
+                {ex.repMin === null && <span className="text-zinc-200">共 {r.logs.reduce((n, l) => n + l.reps, 0)} 次</span>}
+              </span>
             </div>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {r.logs.map((l) => (

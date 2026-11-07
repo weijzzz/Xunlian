@@ -1,6 +1,17 @@
 // 提示音 + 震动。浏览器要求先有一次点击才能出声，所以在第一次点按时解锁。
 let ctx: AudioContext | null = null
 
+// 设置里的开关（SettingsProvider 同步过来）；force = 设置页的「试听」不管开关
+export interface AlertPrefs {
+  sound: boolean // 休息结束的提示音
+  ticks: boolean // 最后 3 秒滴答
+  vibrate: boolean
+}
+let prefs: AlertPrefs = { sound: true, ticks: true, vibrate: true }
+export function setAlertPrefs(p: AlertPrefs) {
+  prefs = p
+}
+
 export function unlockAudio() {
   try {
     ctx ??= new AudioContext()
@@ -40,7 +51,8 @@ export function canVibrate(): boolean {
 }
 
 // 休息结束：三声高音
-export function beepRestOver() {
+export function beepRestOver(force = false) {
+  if (!force && !prefs.sound) return
   unlockAudio()
   if (!ctx) return
   const t = ctx.currentTime + 0.05
@@ -50,13 +62,15 @@ export function beepRestOver() {
 }
 
 // 倒计时最后几秒的短提示
-export function tick() {
+export function tick(force = false) {
+  if (!force && !prefs.ticks) return
   unlockAudio()
   if (!ctx) return
   tone(ctx.currentTime + 0.02, 660, 0.08, 0.35)
 }
 
-export function vibrateRestOver() {
+export function vibrateRestOver(force = false) {
+  if (!force && !prefs.vibrate) return
   if (canVibrate()) navigator.vibrate([400, 150, 400, 150, 400])
 }
 

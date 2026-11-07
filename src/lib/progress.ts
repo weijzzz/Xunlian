@@ -1,4 +1,4 @@
-import { fmtNum, loadText } from '../data/exercises'
+import { fmtNum, setText } from '../data/exercises'
 import type { Exercise, FirstTest, Group, Session, SetLog } from '../data/types'
 import { getExercise } from './library'
 
@@ -84,6 +84,16 @@ export interface Banner {
   text: string
 }
 
+// 力竭动作（引体）：不比每组，比总次数。目标 = 上次总数 +1
+export interface TotalGoal {
+  ref: number // 上次（前 sets 组）一共几次
+  sets: number // 比几组：两次组数不一样时只比前几组
+  partial: boolean // 上次组数更多，只比了前几组
+  target: number | null // 这次目标总数；疲劳模式不给
+  done: number // 这次前 sets 组已经做了几次
+  extra: boolean // 现在这组是多做的（超出对比的组数）
+}
+
 export interface Prefill {
   setNo: number
   load: number
@@ -91,7 +101,21 @@ export interface Prefill {
   reps: number // 次数框默认值
   chips: number[] // 一排可以直接点的次数
   refText: string | null
+  goalText: string // 记组页「→」后面：目标 9 / 目标 力竭 / 目标共 31 次
+  progressText: string | null // 力竭动作第 2 组起：已做 15，还差 16
+  restGoal: string // 休息页「下一个」：目标 9 / 还差 16（目标共 31）
+  total?: TotalGoal
   banners: Banner[]
+}
+
+const maxSetNo = (ls: SetLog[]) => ls.reduce((m, l) => Math.max(m, l.setNo), 0)
+const sumReps = (ls: SetLog[], upTo = Infinity) => ls.reduce((s, l) => (l.setNo <= upTo ? s + l.reps : s), 0)
+
+// 两次训练比总次数：组数一样比全部；不一样只比前几组
+export function totalCompare(mine: SetLog[], ref: SetLog[], plannedSets?: number) {
+  const refSets = maxSetNo(ref)
+  const sets = Math.min(plannedSets ?? maxSetNo(mine), refSets)
+  return { sets, partial: sets < refSets, mine: sumReps(mine, sets), ref: sumReps(ref, sets), refAll: sumReps(ref), refSets }
 }
 
 function range(a: number, b: number): number[] {
@@ -106,6 +130,7 @@ export function computePrefill(
   sessionLogs: SetLog[], // 这次训练里这个动作已经记的组
   ref: SetLog[] | null,
   fatigued: boolean,
+  plannedSets?: number, // 这次计划做几组（这一边）；力竭动作比总次数用
 ): Prefill {
   const sameSide = (l: SetLog) => (l.side ?? null) === (side ?? null)
   const mine = sessionLogs.filter(sameSide).sort(bySet)
@@ -139,6 +164,7 @@ export function computePrefill(
   if (testing && setNo === 1) target = null
   else if (testing) target = ex.repMin
   else if (addKg > 0) target = ex.repMin
+  else if (ex.repMin === null && !fatigued) target = null // 力竭：每组不定目标，看总数
   else if (refSame) {
     target = fatigued ? refSame.reps : refSame.reps + 1
     if (ex.repMax !== null) target = Math.min(target, ex.repMax)
@@ -176,8 +202,32 @@ export function computePrefill(
 
   let refText: string | null = null
   const shown = refSame ?? refLast
-  if (shown) refText = ex.unit === 'none' ? `上次 ${shown.reps} 次` : `上次 ${loadText(ex, shown.load)} × ${shown.reps}`
+  if (shown) refText = `上次 ${setText(ex, shown.load, shown.reps)}`
   else if (!testing) refText = '第一次做'
 
-  return { setNo, load, target, reps, chips, refText, banners }
+  let goalText = `目标 ${target ?? '力竭'}`
+  let restGoal = goalText
+  let progressText: string | null = null
+  let total: TotalGoal | undefined
+  if (ex.repMin === null && !testing && ref?.length) {
+    const cmp = totalCompare(sessionLogs, ref, plannedSets ?? maxSetNo(ref))
+    total = {
+      ref: cmp.ref,
+      sets: cmp.sets,
+      partial: cmp.partial,
+      target: fatigued ? null : cmp.ref + 1,
+      done: cmp.mine,
+      extra: setNo > cmp.sets,
+    }
+    refText = cmp.partial ? `上次前 ${cmp.sets} 组共 ${cmp.ref} 次` : `上次共 ${cmp.ref} 次`
+    if (total.target !== null) {
+      const left = total.target - total.done
+      goalText = `目标共 ${total.target} 次`
+      restGoal = total.done === 0 ? goalText : left > 0 ? `还差 ${left}（目标共 ${total.target}）` : `已达标 ✓ 共 ${total.done}`
+      if (total.extra) progressText = `前 ${total.sets} 组共 ${total.done} 次${left > 0 ? `，差 ${left} 没到目标` : ' ✓'} · 这组是多做的`
+      else if (total.done > 0) progressText = left > 0 ? `已做 ${total.done}，还差 ${left}` : `已做 ${total.done}，已经超过目标 ✓`
+    }
+  }
+
+  return { setNo, load, target, reps, chips, refText, goalText, progressText, restGoal, total, banners }
 }

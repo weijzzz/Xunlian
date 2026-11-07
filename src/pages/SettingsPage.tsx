@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ReminderSection } from '../components/Reminders'
-import { Button, Card, Chip, Divider, Row, SectionTitle } from '../components/ui'
+import { Button, Card, Chip, Divider, Row, SectionTitle, Switch } from '../components/ui'
 import { beepRestOver, canSound, canVibrate, restOverAlert, tick, unlockAudio, vibrateRestOver } from '../lib/alert'
 import {
   canShareFiles,
@@ -150,6 +150,7 @@ function CreatineSection() {
 }
 
 function AlertSection() {
+  const { sound, ticks, vibrate } = useSettings()
   const [running, setRunning] = useState(false)
   const [left, setLeft] = useState<number | null>(null)
   const [done, setDone] = useState(false)
@@ -188,21 +189,36 @@ function AlertSection() {
 
   return (
     <>
-      <SectionTitle>提醒测试</SectionTitle>
+      <SectionTitle hint="训练和吸腹计时都按这里的开关">声音和震动</SectionTitle>
       <Card>
-        <Row label="提示音" sub={canSound() ? '用的是媒体音量，不是铃声音量' : '这个浏览器不支持'}>
-          <Button onClick={beepRestOver} disabled={!canSound()}>
-            试听
-          </Button>
+        <Row label="提示音" sub={canSound() ? '休息结束响三声 · 用的是媒体音量' : '这个浏览器不支持'}>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => beepRestOver(true)} disabled={!canSound()}>
+              试听
+            </Button>
+            <Switch on={sound} onChange={(v) => void setSetting('sound', v)} label="提示音" />
+          </div>
         </Row>
         <Divider />
-        <Row label="震动" sub={canVibrate() ? undefined : '这个浏览器不支持'}>
-          <Button onClick={vibrateRestOver} disabled={!canVibrate()}>
-            试一下
-          </Button>
+        <Row label="滴答声" sub="倒计时最后 3 秒">
+          <div className="flex items-center gap-2">
+            <Button onClick={() => tick(true)} disabled={!canSound()}>
+              试听
+            </Button>
+            <Switch on={ticks} onChange={(v) => void setSetting('ticks', v)} label="滴答声" />
+          </div>
         </Row>
         <Divider />
-        <Row label="模拟休息结束" sub={done ? '响了、震了吗？没有就告诉我' : '倒数 5 秒，最后 3 秒滴答，结束响铃+震动'}>
+        <Row label="震动" sub={canVibrate() ? '休息结束震三下' : '这个浏览器不支持'}>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => vibrateRestOver(true)} disabled={!canVibrate()}>
+              试一下
+            </Button>
+            <Switch on={vibrate} onChange={(v) => void setSetting('vibrate', v)} label="震动" />
+          </div>
+        </Row>
+        <Divider />
+        <Row label="模拟休息结束" sub={done ? '响了、震了吗？没有就告诉我' : '倒数 5 秒，按上面的开关响 / 震'}>
           {left !== null ? (
             <span className="w-16 text-center text-3xl font-bold tabular-nums text-lime-300">{left}</span>
           ) : (

@@ -41,9 +41,12 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - settings.reminders 是列表（id/label/enabled/early/other），以后加别的提醒往里加一项 + push.ts 的 TEXT 加文案
 - `worker/` 推送服务器（Cloudflare Worker + Durable Object 闹钟准点发 Web Push，VAPID 钥匙第一次 /key 时在 DO 里生成）；只存订阅和提醒时间。`.github/workflows/worker.yml` 改 worker/ 时自动部署（要仓库 Secrets：CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID）；地址 https://xunlian-push.zhangweijie2006.workers.dev 填在 push.ts 的 `DEPLOYED_URL`（这个沙盒连不上 workers.dev，只能看 Actions 日志里的检查），调试可用 localStorage `xunlian.pushUrl` 覆盖
 - 为什么要服务器：浏览器的定时通知（Notification Triggers）从没正式上线，PWA 关着时只能靠服务器推
+- 显示一组统一用 exercises.ts 的 `setText`（自重×9 / 地面×10 / 5kg×8 / 30cm×10）和 `loadText`；负重动作 0kg 也显示「自重」
+- 已有用户的动作库改动写在 library.tsx 的 `LIB_MIGRATIONS`（kv `libMigrations` 记已跑过的，每条只跑一次）
+- `src/lib/alert.ts` 的 `setAlertPrefs`：SettingsProvider 把 settings.sound/ticks/vibrate 同步过去；`force` = 设置页试听不管开关
 - 训练卡结构：`blocks[]`，每块 `slots[]` 轮流做；`finisher` 块组间 45s、精简模式跳过
 - Session 存当天训练卡副本 `layout`（含临时改动，精简已裁剪）；`cursor` 用 (块,轮,动作,左右) 定位，改了动作也能找回位置
-- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `library.mjs`（动作库/训练卡，23 项）+ `history.mjs`（总结/历史，22 项）+ `recommend.mjs`（推荐/打卡，21 项）+ `trends.mjs`（趋势图/趋势提示各规则/腰围，24 项）+ `vacuum.mjs`（吸腹计时）+ `reminders.mjs`（提醒：假订阅 + 拦截服务器请求，28 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍；worker：`node --experimental-strip-types test/webpush.test.ts`（加密，用 http_ece 解密核对）+ `wrangler dev --var ALLOW_HTTP_ENDPOINTS:1` 下跑 `test/integration.test.mjs`
+- 测试：`/home/claude/checks/train.mjs` 完整走查（58 项）+ `extras.mjs`（数字条/新建动作/自定义图片）+ `plan.mjs`（改某天训练，23 项）+ `library.mjs`（动作库/训练卡，23 项）+ `history.mjs`（总结/历史，22 项）+ `recommend.mjs`（推荐/打卡，21 项）+ `trends.mjs`（趋势图/趋势提示各规则/腰围，24 项）+ `vacuum.mjs`（吸腹计时）+ `tweaks.mjs`（自重/地面显示、划船迁移、引体总次数、变难了、声音开关、训练计时，39 项）+ `reminders.mjs`（提醒：假订阅 + 拦截服务器请求，28 项）+ `upgrade.mjs`（旧版数据升级），改逻辑后都跑一遍；worker：`node --experimental-strip-types test/webpush.test.ts`（加密，用 http_ece 解密核对）+ `wrangler dev --var ALLOW_HTTP_ENDPOINTS:1` 下跑 `test/integration.test.mjs`
 
 ## 已确认的规则（和用户逐条确认过）
 - 疲劳模式按**肌群**判断（推/拉/腿；腹不受 48h 限制），只有疲劳肌群的数据不参与加重判断
@@ -53,8 +56,13 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 - 计时按结束时间戳算（锁屏/切出去回来也准）
 - 单边动作左右都到次数上限才算达标
 - 加重：负重深度俯卧撑 +2.5kg；其他提示「+1–2kg」，下次预填 +1kg；步进 0.5kg
-- 自重动作（反向卷腹、死虫、反向划船）到顶不提示加重，显示 `progressTip`
-- 引体：没有次数上限，目标 = 上次每组 +1；任一组 >12 才提示背包
+- 自重动作（反向卷腹、死虫、反向划船、门框划船）到顶不提示加重，显示 `progressTip`；划船类 = 「脚往前挪让身体更平 / 改单臂 / 下放改3秒」（ROW_TIP）
+- 门框划船是用户自建的，当时存成了「背包」→ 迁移 `row-bodyweight` 改成自重（只在记录全是 0kg 时）
+- 引体（力竭动作，repMin=null）：比**总次数**，今天目标 = 上次总数 +1；两次组数不一样（精简 3 组、多做一组）只比前 N 组；每组次数默认 = 上次同一组；记组页「已做 X，还差 Y」，休息页「还差 Y（目标共 Z）」，总结「共 X 次 · 上次 Y」；任一组 >12 才提示背包
+- 「变难了」：Session.harder[]（动作 id），训练中 ⋯ 菜单或总结/历史每个动作的「＋变难了」切换；标了以后 ↓ 不显示、不算进力量下滑，↑ 照常；动作趋势明细标出
+- 显示：自重×9、脚垫 0 = 地面×10（用户要求）
+- 声音：设置「声音和震动」三个开关（提示音 / 最后 3 秒滴答 / 震动），训练 ⋯ 菜单一键关掉声音（提示音+滴答，震动照常）；吸腹计时也按开关
+- 训练页顶栏显示已练时间 ⏱（从开始训练算，含热身）
 - 派克记脚垫高度 cm，快捷 0 / 10 / 30 / 45
 - 预填：负重 = 本次上一组 → 上次最后一组（=工作重量，首测组不算）→ 首测重量 → 0；次数目标 = 上次**同负重**、组号最接近那组 +1（封顶上限）；换了负重从下限开始
 - 休息中打开菜单：改动针对「下一个」动作，倒计时继续
@@ -83,4 +91,5 @@ React + Vite + TypeScript + Tailwind v4 · Dexie（IndexedDB）· vite-plugin-pw
 7. ✅ 趋势图（历史→动作趋势）+ 身体数据（体重图、腰围胸围、趋势提示、首页到期提醒）
 —— MVP 七步全部完成。
 7.5 吸腹计时 + 记体重推送提醒（Cloudflare Worker）
+7.6 小改：自重/地面显示、自重划船提示、引体比总次数、变难了标记、声音震动开关、训练计时
 之后是需求文档的 V2：营养记录（热量/蛋白/盐，常用产品库）、动作详情页

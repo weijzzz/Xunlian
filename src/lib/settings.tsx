@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
+import { setAlertPrefs } from './alert'
 import type { KV } from '../data/types'
 import { db } from './db'
 import type { WeekPlan } from './week'
@@ -20,6 +21,9 @@ export interface Settings {
   vacuumHold: number // 吸腹每组保持几秒
   pushOn: boolean // 开了通知
   reminders: Reminder[]
+  sound: boolean // 休息结束提示音
+  ticks: boolean // 倒计时最后 3 秒滴答
+  vibrate: boolean // 震动
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -29,6 +33,9 @@ export const DEFAULT_SETTINGS: Settings = {
   vacuumHold: 30,
   pushOn: false,
   reminders: [{ id: 'weight', label: '记体重', enabled: true, early: '08:00', other: '08:00' }],
+  sound: true,
+  ticks: true,
+  vibrate: true,
 }
 
 function toSettings(rows: KV[]): Settings {
@@ -55,7 +62,9 @@ const SettingsContext = createContext<Settings>(DEFAULT_SETTINGS)
 // 全 App 只有这一个订阅，所有页面共用同一份设置
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const rows = useLiveQuery(() => db.kv.toArray(), [], initialRows)
-  return <SettingsContext.Provider value={toSettings(rows)}>{children}</SettingsContext.Provider>
+  const s = toSettings(rows)
+  useEffect(() => setAlertPrefs({ sound: s.sound, ticks: s.ticks, vibrate: s.vibrate }), [s.sound, s.ticks, s.vibrate])
+  return <SettingsContext.Provider value={s}>{children}</SettingsContext.Provider>
 }
 
 export function useSettings(): Settings {

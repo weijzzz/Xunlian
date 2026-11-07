@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import { SEED_EXERCISES } from '../data/exercises'
+import { ROW_TIP, SEED_EXERCISES } from '../data/exercises'
 import { SEED_TEMPLATES } from '../data/templates'
 import { GROUP_ORDER, type Block, type Exercise, type Group, type Template } from '../data/types'
 import { db } from './db'
@@ -20,6 +20,53 @@ export async function seedLibrary() {
   await db.transaction('rw', db.exercises, db.templates, async () => {
     if ((await db.exercises.count()) === 0) await db.exercises.bulkAdd(SEED_EXERCISES)
     if ((await db.templates.count()) === 0) await db.templates.bulkAdd(SEED_TEMPLATES)
+  })
+  await migrateLibrary()
+}
+
+// 已有用户的动作库改动（SEED 只在表空时导入，所以改已有数据要在这里写）。每条只跑一次。
+const OLD_ROW_TIP = '脚往前移，让身体更平'
+const LIB_MIGRATIONS: { id: string; run: () => Promise<void> }[] = [
+  {
+    // 2026-11：自重划船达标后不提示 +1kg，改提示更难的做法
+    id: 'row-bodyweight',
+    run: async () => {
+      const inv = await db.exercises.get('inverted_row')
+      if (inv && (inv.progressTip === OLD_ROW_TIP || !inv.progressTip)) await db.exercises.update(inv.id, { progressTip: ROW_TIP })
+      for (const ex of await db.exercises.filter((e) => e.name.includes('门框划船')).toArray()) {
+        if (ex.unit === 'kg') {
+          // 新建时负重方式默认是「背包」；只有从没背过东西（记录全是 0kg）才改成自重
+          const logs = await db.setLogs.where('exerciseId').equals(ex.id).toArray()
+          if (logs.some((l) => l.load !== 0)) continue
+          await db.exercises.update(ex.id, {
+            unit: 'none',
+            step: 0,
+            loadLabel: '自重',
+            addLoad: undefined,
+            addLoadText: undefined,
+            loadAfterReps: undefined,
+            firstTest: undefined,
+            progressTip: ex.progressTip || ROW_TIP,
+          })
+        } else if (ex.unit === 'none' && !ex.progressTip) {
+          await db.exercises.update(ex.id, { progressTip: ROW_TIP })
+        }
+      }
+    },
+  },
+]
+
+async function migrateLibrary() {
+  const row = await db.kv.get('libMigrations')
+  const done = new Set(Array.isArray(row?.value) ? (row.value as string[]) : [])
+  const todo = LIB_MIGRATIONS.filter((m) => !done.has(m.id))
+  if (!todo.length) return
+  await db.transaction('rw', db.exercises, db.setLogs, db.kv, async () => {
+    for (const m of todo) {
+      await m.run()
+      done.add(m.id)
+    }
+    await db.kv.put({ key: 'libMigrations', value: [...done] })
   })
 }
 

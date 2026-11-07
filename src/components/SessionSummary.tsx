@@ -1,10 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState } from 'react'
-import { fmtNum } from '../data/exercises'
+import { setText } from '../data/exercises'
 import { GROUP_NAME, type Exercise, type SetLog } from '../data/types'
 import { db } from '../lib/db'
 import { getExercise } from '../lib/library'
-import { deleteLog, updateLog } from '../lib/session'
+import { deleteLog, toggleHarder, updateLog } from '../lib/session'
 import { summarize, type Trend } from '../lib/summary'
 import { Sheet } from './Sheet'
 import { Stepper } from './Stepper'
@@ -16,13 +16,13 @@ const TREND_STYLE: Record<Trend, string> = {
   worse: 'bg-amber-400/20 text-amber-200',
   first: 'bg-sky-400/20 text-sky-200',
   fatigued: 'bg-amber-400/15 text-amber-200',
+  harder: 'bg-sky-400/20 text-sky-200',
 }
-const TREND_ICON: Record<Trend, string> = { better: '↑ ', same: '= ', worse: '↓ ', first: '', fatigued: '' }
+const TREND_ICON: Record<Trend, string> = { better: '↑ ', same: '= ', worse: '↓ ', first: '', fatigued: '', harder: '' }
 
 function pill(ex: Exercise, l: SetLog): string {
   const side = l.side === 'L' ? '左' : l.side === 'R' ? '右' : ''
-  if (ex.unit === 'none') return `${side}${l.reps}`
-  return `${side}${fmtNum(l.load)}${ex.unit === 'cm' ? 'cm' : 'kg'}×${l.reps}`
+  return `${side}${setText(ex, l.load, l.reps)}`
 }
 
 // 一次训练的完整总结：完成页和历史详情共用。点某一组可以改/删
@@ -87,10 +87,12 @@ export function SessionSummaryView({ sessionId, editable = true }: { sessionId: 
             <div className="py-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[17px] font-semibold">{e.ex.name}</span>
-                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${TREND_STYLE[e.trend]}`}>
-                  {TREND_ICON[e.trend]}
-                  {e.trendText}
-                </span>
+                {e.trend !== 'harder' && (
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${TREND_STYLE[e.trend]}`}>
+                    {TREND_ICON[e.trend]}
+                    {e.trendText}
+                  </span>
+                )}
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {e.logs.map((l) => (
@@ -104,13 +106,29 @@ export function SessionSummaryView({ sessionId, editable = true }: { sessionId: 
                     {pill(e.ex, l)}
                   </button>
                 ))}
+                {(editable || e.harder) && (
+                  <button
+                    type="button"
+                    disabled={!editable}
+                    aria-pressed={e.harder}
+                    aria-label={`${e.ex.name}变难了`}
+                    onClick={() => void toggleHarder(session.id, e.ex.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-[15px] font-semibold ${
+                      e.harder ? 'bg-sky-400/25 text-sky-100' : 'border border-dashed border-zinc-500 text-zinc-400 active:bg-zinc-700'
+                    }`}
+                  >
+                    {e.harder ? '✓ 变难了' : '＋变难了'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
         ))}
         {sum.exercises.length === 0 && <div className="py-3 text-[15px] text-zinc-300">这次没有记录任何组</div>}
       </Card>
-      {editable && sum.exercises.length > 0 && <p className="mt-2 px-1 text-[13px] text-zinc-400">记错了？点那一组可以改或删</p>}
+      {editable && sum.exercises.length > 0 && (
+        <p className="mt-2 px-1 text-[13px] text-zinc-400">记错了？点那一组可以改或删 · 改了节奏或变式（下放 4 秒、腿伸直…）点「变难了」，少了不算退步</p>
+      )}
 
       <EditSetSheet log={edit} onClose={() => setEdit(null)} />
     </div>
